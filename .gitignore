@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Compiled output and test artifacts
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and process files
+*.log
+*.pid
+
+# Local database and runtime data
+.data/
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+
