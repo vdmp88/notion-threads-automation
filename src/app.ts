@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 
 import type { AppConfig } from './config/env.js';
 import { registerHealthRoute } from './routes/health.js';
+import { registerPostsRoute } from './routes/posts.js';
 
 export interface BuildAppOptions {
   logger?: boolean;
@@ -14,6 +15,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   const app = Fastify(fastifyOptions);
   app.register(registerHealthRoute);
+  app.register(registerPostsRoute);
 
   return app;
 }

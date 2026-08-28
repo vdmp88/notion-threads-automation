@@ -2,7 +2,7 @@
 
 A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single Threads account.
 
-> **Current status:** Phase 1 foundation is complete. The project has a tested health server and validated base configuration, but no Notion or Threads integration yet.
+> **Current status:** Phase 1 foundation is complete. The project has a tested health server, validated base configuration, and a temporary in-memory `GET /posts` learning route, but no Notion, Threads, or MongoDB integration yet.
 
 ## MVP goal
 
@@ -19,9 +19,13 @@ The first working version will:
 
 AI generation, webhooks, scheduled posts, queues, multi-user authentication, analytics history, and a dashboard are outside the MVP.
 
-## Architecture
+## Project documentation
 
-The approved architecture, data flow, reliability policy, and technology tradeoffs are documented in [docs/architecture.md](docs/architecture.md).
+- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md): current implementation state and next checkpoint
+- [docs/architecture.md](docs/architecture.md): approved architecture, data flow, and reliability policy
+- [docs/roadmap.md](docs/roadmap.md): learning track and product phases
+- [docs/decisions/](docs/decisions/): durable explanations of important architectural decisions
+- [AGENTS.md](AGENTS.md): working instructions for Codex and other coding agents
 
 ## Technology decisions
 
@@ -38,14 +42,14 @@ The approved architecture, data flow, reliability policy, and technology tradeof
 
 ## Prerequisites
 
-Currently available locally:
+Required locally:
 
-- Node.js `v24.1.0`
-- npm `11.3.0`
+- Node.js 24 LTS (`>=24.1.0 <25`)
+- npm 11 or newer
 - Git
 - Docker (installed but not used in the current phase)
 
-Node `v24.1.0` is sufficient for local development and the current MongoDB driver, but it is behind current Node 24 security releases. Upgrade to a current Node 24 LTS patch before production deployment.
+Use a current security-patched Node 24 release. If npm reports `EBADENGINE` while using Node 26, switch the terminal back to Node 24 rather than weakening the project's supported-runtime rule.
 
 External accounts have not been configured. They will be created when their integrations begin:
 
@@ -113,7 +117,8 @@ npm run format:check
 
 ## Current limitations
 
-- Only the health route and application foundation exist; publishing is not implemented.
+- The health route and application foundation exist; publishing is not implemented.
+- `GET /posts` returns temporary in-memory learning data and is not a production content source.
 - No Notion, Threads, or MongoDB connection has been configured.
 - The Notion property schema has not yet been retrieved and validated.
 - Threads publishing and metrics endpoints have not been called.
