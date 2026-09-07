@@ -5,7 +5,7 @@
 1. Read `PROJECT_CONTEXT.md` for the current goal, implementation state, and next checkpoint.
 2. Read `README.md` for setup and commands.
 3. Read only the relevant files under `docs/` for the task at hand.
-4. Inspect the current working tree before changing code. Preserve unrelated or user-authored changes.
+4. Inspect existing local files before changing code. Preserve unrelated or user-authored changes. All Git operations belong to the user; do not run Git commands unless the user explicitly delegates a specific operation. Make and verify edits locally.
 
 After a meaningful milestone, update `PROJECT_CONTEXT.md` so a new chat can continue without reconstructing previous conversations. Update `docs/roadmap.md` when phase status or sequencing changes. Record a new ADR under `docs/decisions/` only for an important decision that should remain understandable later.
 

@@ -6,6 +6,16 @@ Last verified: 2026-08-28
 
 This file is the handoff between development chats. It records the stable product goal, the current implementation state, and the next checkpoint. Update it after meaningful changes so the user does not need to repeat earlier decisions.
 
+## Local workspace and context ownership
+
+Confirmed with the user on 2026-09-07:
+
+- Work in the existing local project folder: `/Users/iamvdmp/Documents/NixWork/notion-threads-automation`.
+- The `PROJECT_CONTEXT.md` in this repository root is the single authoritative context document. Read and update it directly; do not create context copies or replacement projects in temporary folders or chat mirrors.
+- If a chat starts elsewhere, explicitly use the project folder above. If it is unavailable, report the access problem instead of working from another snapshot.
+- The assistant edits local project files. The user owns all Git operations, including staging, commits, branches, merges, pulls, and pushes. Do not run Git commands unless the user explicitly delegates a specific operation.
+- Check existing local file contents before editing, preserve unrelated changes, and verify edits by reading the files without relying on Git commands.
+
 ## User and working style
 
 - The user is a React frontend developer learning Node.js and backend development.
