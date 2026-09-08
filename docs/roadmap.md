@@ -1,8 +1,10 @@
 # Roadmap
 
-Last reviewed: 2026-08-28
+Last reviewed: 2026-09-08
 
 This roadmap separates the short learning exercises from the production MVP. A learning exercise may introduce a concept without becoming part of the final architecture.
+
+The active product target is **Notion → X (Twitter)**. The user replaced Threads on 2026-09-08; completed Notion work is retained. Historical repository and Notion names do not change the target. See [ADR 004](decisions/004-target-x-twitter.md).
 
 ## Learning track
 
@@ -46,7 +48,7 @@ Completion note: the temporary `GET /posts` route is a later learning exercise, 
 
 ### Phase 2 — Notion adapter
 
-Status: not started.
+Status: in progress — both read-only CLIs were manually verified with the test database/post. On 2026-09-08 the user confirmed all five focused empty-text validation tests passed. The live CLI rejection path, whole-schema validation, full ContentPost mapping, and remaining content eligibility rules are still pending.
 
 - re-check current official Notion API and SDK documentation
 - create or connect the Notion integration
@@ -58,15 +60,15 @@ Status: not started.
 
 Exit criterion: the application can read and validate `ready` posts without publishing or changing external state in dry-run mode.
 
-### Phase 3 — Threads adapter
+### Phase 3 — X (Twitter) adapter
 
 Status: not started.
 
-- re-check current official Threads/Meta documentation
-- configure the single-user app and permissions
-- implement server-side authentication/token handling
-- validate post text and API responses
-- create and publish one text post only after explicit approval
+- re-check current official X API documentation, endpoint access, and pricing; confirm any cost with the user before paid calls
+- configure the single-user developer app and choose supported user-context authentication with write permissions
+- implement server-side authentication/token handling for that flow
+- validate text using X-specific length/counting rules and validate API responses; do not reuse the former platform limit
+- create one text post through the X API only after explicit approval
 - normalize and sanitize API errors
 
 Exit criterion: one approved test post can be published deliberately, with credentials protected and ordinary tests making no real API calls.
@@ -99,7 +101,8 @@ Status: postponed until the MVP workflow is stable.
 
 Status: postponed.
 
-- retrieve only currently supported Threads metrics
+- confirm available X metrics, read permissions, and API costs for the selected access level
+- retrieve only supported and authorized X metrics
 - normalize unavailable metrics
 - write metrics and the synchronization timestamp to Notion
 - avoid excessive requests and overlapping runs

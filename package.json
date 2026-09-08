@@ -10,6 +10,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "notion:inspect": "tsx src/cli/inspect-notion.ts",
+    "notion:posts": "tsx src/cli/list-notion-posts.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",

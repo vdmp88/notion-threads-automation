@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-08-28
+- Amended: 2026-09-08 — examples now target X (Twitter); the original storage decision remains accepted. See [ADR 004](004-target-x-twitter.md).
 
 ## Context
 
@@ -18,14 +19,14 @@ Notion owns:
 - post title and text
 - topic
 - editorial status: `draft`, `ready`, or `published`
-- published Threads ID, URL, and date shown to the user
+- published X ID, URL, and date shown to the user
 - later, supported metrics shown to the user
 
 MongoDB owns:
 
 - atomic publication claims
 - publication state transitions
-- Threads container and post identifiers needed for recovery
+- X post identifiers and publication progress needed for recovery
 - attempt counts and sanitized errors
 - reconciliation state
 - later, synchronization leases or technical history when justified
@@ -50,4 +51,4 @@ Keeping independently editable copies in both systems creates conflict and synch
 - The user continues working in Notion.
 - MongoDB can protect idempotency without cluttering Notion with every internal transition.
 - Adapters and mapping code are required between external Notion data and internal domain types.
-- Reconciliation rules are still necessary because MongoDB and Threads cannot share one transaction.
+- Reconciliation rules are still necessary because MongoDB and X cannot share one transaction.

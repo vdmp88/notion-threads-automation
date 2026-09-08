@@ -2,10 +2,11 @@
 
 - Status: accepted for Phase 4
 - Date: 2026-08-28
+- Amended: 2026-09-08 — examples now target X (Twitter); the original storage decision remains accepted. See [ADR 004](004-target-x-twitter.md).
 
 ## Context
 
-The publishing workflow needs durable technical state to prevent intentional duplicate publication and to recover when Threads succeeds but a later operation fails. MongoDB will store publication claims, state transitions, attempts, identifiers, and sanitized errors.
+The publishing workflow needs durable technical state to prevent intentional duplicate publication and to recover when X succeeds but a later operation fails. MongoDB will store publication claims, state transitions, attempts, identifiers, and sanitized errors.
 
 The main client choices considered were the official MongoDB Node.js driver and Mongoose.
 
@@ -26,7 +27,7 @@ Mongoose provides schemas, models, middleware, and document methods. Those featu
 
 ### Notion as the only storage
 
-Notion is the editorial source, but it cannot reliably represent every intermediate technical state. If Threads publishes and the process fails before Notion is updated, relying only on the visible Notion status can cause an unsafe retry.
+Notion is the editorial source, but it cannot reliably represent every intermediate technical state. If X publishes and the process fails before Notion is updated, relying only on the visible Notion status can cause an unsafe retry.
 
 ### PostgreSQL
 

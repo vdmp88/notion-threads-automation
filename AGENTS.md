@@ -11,16 +11,18 @@ After a meaningful milestone, update `PROJECT_CONTEXT.md` so a new chat can cont
 
 ## Product direction
 
+The target is Notion → X (Twitter), as chosen by the user on 2026-09-08. Threads is no longer a target. Historical folder/package/Notion names remain unchanged; see PROJECT_CONTEXT.md for the naming boundary.
+
 Build an understandable, production-minded Node.js application for this flow:
 
-`Notion-approved content → validation → safe Threads publication → publication state in MongoDB → result and later analytics back in Notion`
+`Notion-approved content → validation → safe X publication → publication state in MongoDB → result and later analytics back in Notion`
 
 Optional AI work begins only after the core publishing workflow is stable. AI output must remain a draft until a human approves it.
 
 ## Safety boundaries
 
 - Keep `DRY_RUN=true` as the default.
-- Never publish a real Threads post or perform another external write without the user's explicit confirmation immediately before the action.
+- Never publish a real X post or perform another external write without the user's explicit confirmation immediately before the action.
 - Never expose or log tokens, credentials, `.env` contents, or other secrets.
 - Prefer free tiers and open-source solutions. Ask before introducing a paid service.
 - Do not deploy publicly, alter external schemas, or make destructive changes without explicit approval.
@@ -41,7 +43,7 @@ Optional AI work begins only after the core publishing workflow is stable. AI ou
 
 - Node.js 24, TypeScript, strict mode, ES modules, and npm.
 - Fastify for HTTP, Zod for runtime validation, and Fastify/Pino structured logging.
-- Official Notion SDK, native `fetch` for Threads, and the official MongoDB Node.js driver without Mongoose.
+- Official Notion SDK, native `fetch` for X, and the official MongoDB Node.js driver without Mongoose.
 - Vitest, ESLint, and Prettier.
 - One codebase with separate HTTP and finite CLI entry points.
 - Keep HTTP routes thin. Put business rules in services and external API details in adapters.
