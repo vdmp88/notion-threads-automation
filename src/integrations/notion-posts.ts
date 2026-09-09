@@ -1,19 +1,14 @@
 import { Client, isFullPage } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client';
 
+import type { ReadyContentPost } from '../domain/content-post.js';
 import { postTextSchema } from '../domain/post-text.js';
-
-export interface ReadyPostPreview {
-  notionPageId: string;
-  title: string;
-  text: string;
-  topic: string | null;
-  status: 'ready';
-}
+import { readNotionSchema } from './notion.js';
+import { validateNotionPostSchema } from './notion-schema.js';
 
 export class NotionPostDataError extends Error {}
 
-function mapReadyPost(page: PageObjectResponse): ReadyPostPreview {
+function mapReadyPost(page: PageObjectResponse): ReadyContentPost {
   const { Name: name, Text: text, Topic: topic, Status: status } = page.properties;
 
   if (
@@ -31,7 +26,9 @@ function mapReadyPost(page: PageObjectResponse): ReadyPostPreview {
     throw new NotionPostDataError('A returned post is no longer ready. Run the query again.');
   }
 
-  const parsedText = postTextSchema.safeParse(text.rich_text.map((part) => part.plain_text).join(''));
+  const parsedText = postTextSchema.safeParse(
+    text.rich_text.map((part) => part.plain_text).join(''),
+  );
 
   if (!parsedText.success) {
     throw new NotionPostDataError(
@@ -45,14 +42,23 @@ function mapReadyPost(page: PageObjectResponse): ReadyPostPreview {
     text: parsedText.data,
     topic: topic.select?.name ?? null,
     status: 'ready',
+    // Publication metadata is not loaded yet; null is not proof of no prior publication.
+    xPostId: null,
+    xUrl: null,
+    publishedAt: null,
   };
 }
 
 export async function readReadyNotionPosts(
   client: Client,
   dataSourceId: string,
-): Promise<ReadyPostPreview[]> {
-  const posts: ReadyPostPreview[] = [];
+): Promise<ReadyContentPost[]> {
+  const schema = await readNotionSchema(client, dataSourceId);
+
+  validateNotionPostSchema(schema);
+
+  const posts: ReadyContentPost[] = [];
+  const seenCursors = new Set<string>();
   let cursor: string | null = null;
 
   do {
@@ -82,6 +88,14 @@ export async function readReadyNotionPosts(
     }
 
     cursor = response.has_more ? response.next_cursor : null;
+
+    if (cursor !== null) {
+      if (seenCursors.has(cursor)) {
+        throw new NotionPostDataError('Notion returned a repeated pagination cursor.');
+      }
+
+      seenCursors.add(cursor);
+    }
   } while (cursor !== null);
 
   return posts;

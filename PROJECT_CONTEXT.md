@@ -28,12 +28,13 @@ This is a documentation/plan change. Existing source code, secrets, repository i
 - New documentation uses `xPostId`, `xUrl`, and planned Notion properties `X Post ID` / `X URL`. Those publication fields do not exist in the current four-column Notion database yet.
 - The unused Threads/Meta placeholders were removed from `.env.example`. X authentication settings will be specified when the Phase 3 auth flow is selected; the local `.env` was not changed.
 
-The Notion CLI work and completed text-rule tests remain valid. The pending live empty-text check remains pending; no X account, developer app, API access, cost, or publication has been configured or verified. Before Phase 3, check current official X access/pricing, user-context authentication, and text-length counting rules. Do not carry over the old container flow, permissions, token lifetimes, or text limit.
+The Notion CLI work and completed text-rule tests remain valid. The user has now verified live empty-text rejection and the subsequent successful valid-post read (see the checkpoint below). No X account, developer app, API access, cost, or publication has been configured or verified. Before Phase 3, check current official X access/pricing, user-context authentication, and text-length counting rules. Do not carry over the old container flow, permissions, token lifetimes, or text limit.
 
 ## User and working style
 
 - The user is a React frontend developer learning Node.js and backend development.
 - Explanations should be concise, concrete, and in plain Russian.
+- User decision on 2026-09-08: critical-only tests, representative cases, batched checks, and short result summaries. Reduce token overhead and avoid repeated test/log/documentation round trips.
 - Work one small step at a time and reconnect backend concepts to familiar frontend ideas when helpful.
 - The user installs dependencies personally.
 - Do not run tests, builds, linters, formatters, or the development server unless explicitly requested.
@@ -145,7 +146,7 @@ Not implemented:
 
 - persistent Posts API
 - MongoDB connection and publication repository
-- full ContentPost mapping and publication eligibility validation (read-only schema and ready-post preview CLIs have both been manually verified)
+- publication metadata loading and remaining publication eligibility validation (ContentPost editorial mapping now exists; see the latest checkpoint for unrun changes)
 - X authentication or publishing (the previous Threads target was replaced on 2026-09-08)
 - publishing service and idempotency state machine
 - analytics, scheduling, AI, or deployment
@@ -203,12 +204,51 @@ Text validation step on 2026-09-08:
 
 - Added `postTextSchema` in `src/domain/post-text.ts`. Zod rejects empty and whitespace-only strings using a trimmed copy for the check, preserving the original text for valid posts.
 - The Notion mapper validates the assembled rich-text string before returning a preview. Failure raises a safe `NotionPostDataError` with the page ID; the existing CLI exits with code 1 and prints no partial preview. It makes no external writes.
-- Added five focused cases in `test/post-text.test.ts` for blank inputs and preservation of author formatting. On 2026-09-08 the user ran `npm test -- test/post-text.test.ts` and shared output confirming all five passed. This verifies the isolated text rule. The updated CLI's rejection path against a real empty Notion post and typechecking remain unverified; the successful ready-post run above predates this change.
+- Added five focused cases in `test/post-text.test.ts` for blank inputs and preservation of author formatting. On 2026-09-08 the user ran `npm test -- test/post-text.test.ts` and shared output confirming all five passed. This verifies the isolated text rule. The original successful ready-post run above predates this change; subsequent live checks are recorded below. Typechecking remains unverified for this work.
+
+Live text-validation checks confirmed by user output on 2026-09-08:
+
+- With a separate empty `ready` test row, `npm run notion:posts` printed `Ready post 3d520a4e-cef0-8036-9a4c-c2cfeaf9c8e0: Text must not be empty or whitespace-only.` This confirms the real Notion rejection path; the shell exit code was not included in the shared output.
+- After instructions to move that test row to `draft` and rerun, the user shared a successful result with `count: 1` and only the original `First text` post (`3d420a4e-cef0-80fd-a95d-e7f0f390a846`, text `Hi there! It’s my first post!`, topic `general`, status `ready`). This confirms the valid read path after adding validation and is consistent with excluding the draft test row.
+- Do not repeat these checks by default. Empty result sets, pagination, other malformed properties, and full schema validation remain unverified. The assistant did not run commands against Notion or change external data for these checks.
+
+Expected-schema validation step added on 2026-09-08 (focused tests now passed):
+
+- Added `src/integrations/notion-schema.ts`: `validateNotionPostSchema` checks exact Name/title, Text/rich_text, Topic/select, and Status/status properties, plus `draft`, `ready`, and `published` status options. Extra columns/options are allowed; Topic has no required option value. Failures use `NotionSchemaError` with fixed expected field/type/option names rather than raw API payloads.
+- `readReadyNotionPosts` now reads schema once and validates it before the first page query, so an invalid source cannot silently appear to be a valid empty result. Existing per-page and text checks remain. `notion:posts` displays safe schema errors and sets exit code 1. `notion:inspect` remains a diagnostic schema summary.
+- Added 17 cases in `test/notion-schema.test.ts`: valid/extended schemas, each missing or incorrectly typed property, renamed property, each missing or differently cased required status, valid empty query, invalid schema preventing the query, and schema-read failure preventing the query. The workflow cases mock the schema reader and SDK query, with network requests disabled; they do not verify real SDK response mapping or the CLI process itself.
+- Source and documentation were reviewed by reading files only. No tests, typecheck, formatter, build, dependency installation, Git command, or external API call was run for this step. Current Notion resources and secrets are unchanged.
+
+Verification update from user-shared terminal output on 2026-09-08:
+
+- `npm test -- test/notion-schema.test.ts` passed all 17 tests (one test file).
+- The user also ran `npm run typecheck`; the shared `tsc --noEmit` output contains no diagnostics. The shell exit code and returned prompt were not included.
+- The user then ran the updated `npm run notion:posts` against the unchanged table and shared `count: 1` with the original `First text` post (`3d420a4e-cef0-80fd-a95d-e7f0f390a846`, text `Hi there! It’s my first post!`, topic `general`, status `ready`). This verifies the new schema preflight and successful read path on the real source. It does not establish full-suite, lint, build, formatting, or Node 24 runtime verification.
+
+ContentPost and mapping-test step on 2026-09-08 (not yet run):
+
+- Added `src/domain/content-post.ts` with `PostStatus`, `ContentPost`, and `ReadyContentPost` (status narrowed to ready). The Notion reader now returns ReadyContentPost instead of its integration-local ReadyPostPreview type.
+- Existing editorial fields are mapped as before. Added output keys `xPostId`, `xUrl`, and `publishedAt` always equal null for now: these values are not loaded from Notion/MongoDB and do not establish absence of a past publication. No external columns were added. Reading publication metadata and ledger-backed duplicate checks must be implemented before enabling publication.
+- Added repeated-pagination-cursor detection to stop a malformed pagination cycle with a safe NotionPostDataError.
+- Added 29 cases in `test/notion-posts.test.ts`: domain output and non-mutation, rich-text fragment preservation, nullable Topic, missing/wrong property types, non-ready statuses, empty text, empty results, archive flags, partial pages, multiple query pages, empty intermediate pages, incomplete responses, missing/repeated cursors, and later-query failure without partial return. Schema reads and SDK queries are mocked and network is disabled.
+- No tests, typecheck, build, lint, formatter, dependency installation, external requests, or Git operations were run for this step. Earlier passing output does not verify these new changes.
+- The user wants to continue Stage 2 first, then go through a detailed explanation of what was built and how it works. Preserve that teaching checkpoint; do not automatically advance into X setup before the agreed review.
+
+Full-suite verification from user-shared output on 2026-09-08:
+
+- `npm test` passed all 56 tests across 5 files: post-text 5, env 4, notion-schema 17, notion-posts 29, and health 1. This includes the new ContentPost and pagination checks.
+- The user also ran `npm run typecheck`; the shared `tsc --noEmit` output contains no diagnostics. Runtime version and shell exit code were not shown.
+- The user verified the new output against the real Notion table: count 1, the original First text post, and null xPostId, xUrl, and publishedAt. Lint, build, and formatting were not included in this verification.
+
+Testing-policy update on 2026-09-08:
+
+- At the user's request, reduced 56 tests to 23: env 4, health 1, post-text 2, notion-schema 5, notion-posts 11. Removed repetitive and secondary cases; kept input/schema rejection, the schema gate, mapping, empty results, non-ready/trashed/partial pages, pagination and incomplete-result safety. Production code and guards are unchanged. Coverage is intentionally narrower; removed variants are not hidden inside loops.
+- The 56-test pass above is historical. The reduced suite has not been executed. Do not demand an immediate full verification cycle solely for this cleanup; batch a relevant check at the next milestone.
 
 At the start of the next development task:
 
-1. Inspect local files and read this file before changing code; Git operations belong to the user. Continue toward X (Twitter), even though retained resource names contain threads.
-2. Both CLIs were manually verified before the new empty-text rule; all five focused text-rule tests now passed in the user's terminal. Next guide a live check: the user adds a separate empty Text test row with Status ready, runs `npm run notion:posts`, and shares the safe error. Then they change that extra row to draft and rerun to confirm the original valid post is returned. Preserve the original post; do not change Notion yourself without authorization.
-3. Continue Phase 2 in small steps with expected-schema validation, remaining content rules, and full ContentPost mapping. Use supported Node 24 for checks and run commands only when requested. The detailed code explanation remains deferred at the user's request.
-4. Keep `DRY_RUN=true`; do not update Notion or call X during schema inspection.
-5. Extend the existing read-only CLI flow with validated ContentPost mapping before progressing to X. Phase 2 is still in progress; successful preview alone does not complete it.
+1. Use this local repository only; Git and command execution remain user-controlled.
+2. The read-only Notion schema and ContentPost path is implemented and manually verified, including the three null publication fields. Review Stage 2 exit criteria without adding exhaustive tests or repeating prior live checks.
+3. Batch relevant checks and ask only for a summary or errors. Lint/build/format remain unverified; do not claim they passed or make them a gate after every small edit.
+4. Before X implementation, give the detailed Stage 2 explanation the user requested. X-specific text limits belong to Phase 3; metadata synchronization and duplicate protection belong to the publishing workflow.
+5. Keep DRY_RUN=true. Null metadata is not proof of no prior publication. Do not write to Notion or publish without explicit approval.

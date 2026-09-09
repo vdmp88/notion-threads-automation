@@ -94,7 +94,7 @@ Uses the official MongoDB Node.js driver. It creates unique indexes, atomically 
 
 ## Internal domain model
 
-External responses are mapped to an internal model similar to:
+The shared internal model is defined in `src/domain/content-post.ts`:
 
 ```ts
 type PostStatus = 'draft' | 'ready' | 'published';
@@ -115,22 +115,22 @@ This model is the backend equivalent of converting an API response into stable f
 
 ## Notion data model
 
-The existing database is still titled `Threads Posts` (a retained label). Its four current fields have been inspected: Name, Text, Topic, and Status. The table below distinguishes those fields from proposed publication fields; this document does not claim the latter were created. Phase 2 still needs reusable expected-schema validation.
+The existing database is still titled `Threads Posts` (a retained label). Its four current fields have been inspected: Name, Text, Topic, and Status. The table below distinguishes those fields from proposed publication fields; this document does not claim the latter were created. The ready-post reader now validates those exact field names/types and the status options `draft`, `ready`, and `published` before querying pages. Extra properties/options are allowed. The user shared passing output for all 17 focused schema tests on 2026-09-08. The user also verified the updated preflight against the real table and retrieved the original ready post. The inspection CLI remains diagnostic and does not enforce this schema.
 
-| Property | Notion UI type | State / purpose |
-| --- | --- | --- |
-| `Name` | Title | Exists; internal post title |
-| `Text` | Text (API: rich_text) | Exists; text intended for X |
-| `Topic` | Select | Exists; topic grouping |
-| `Status` | Status | Exists; `draft`, `ready`, `published` |
-| `X Post ID` | Text | Planned; published X identifier, stored as a string |
-| `X URL` | URL | Planned; public post link |
-| `Published At` | Date | Planned; publication time |
-| `Sync Status` | Select | Proposed; synchronization progress |
-| `Last Error` | Text | Proposed; bounded, sanitized error |
-| `Retry Count` | Number | Proposed; safe retry attempts |
+| Property       | Notion UI type        | State / purpose                                     |
+| -------------- | --------------------- | --------------------------------------------------- |
+| `Name`         | Title                 | Exists; internal post title                         |
+| `Text`         | Text (API: rich_text) | Exists; text intended for X                         |
+| `Topic`        | Select                | Exists; topic grouping                              |
+| `Status`       | Status                | Exists; `draft`, `ready`, `published`               |
+| `X Post ID`    | Text                  | Planned; published X identifier, stored as a string |
+| `X URL`        | URL                   | Planned; public post link                           |
+| `Published At` | Date                  | Planned; publication time                           |
+| `Sync Status`  | Select                | Proposed; synchronization progress                  |
+| `Last Error`   | Text                  | Proposed; bounded, sanitized error                  |
+| `Retry Count`  | Number                | Proposed; safe retry attempts                       |
 
-Analytics fields and `Metrics Updated At` are postponed to Phase 6; select only metrics actually available with the user's X access. Do not assume metric names, permissions, or availability carry over from the old target. `Scheduled At` is postponed until scheduling is designed. The full ContentPost model and publication properties are still planned, while the working CLI currently returns ReadyPostPreview.
+Analytics fields and `Metrics Updated At` are postponed to Phase 6; select only metrics actually available with the user's X access. Do not assume metric names, permissions, or availability carry over from the old target. `Scheduled At` is postponed until scheduling is designed. The CLI now returns `ReadyContentPost` (ContentPost with status narrowed to ready). The four editorial properties are mapped, while `xPostId`, `xUrl`, and `publishedAt` are reserved null values: publication metadata is not loaded yet, even if similarly named extra Notion columns exist. Null must not be treated as evidence of no earlier publication. Publication metadata integration and the MongoDB duplicate check remain prerequisites before enabling a publisher. The user shared a passing full-suite run (56 tests, including all 29 mapping/query cases). The user verified the new output against the real Notion table: count 1, the original First text post, and null xPostId, xUrl, and publishedAt.
 
 ## Publication ledger
 
@@ -171,11 +171,11 @@ MongoDB and X cannot participate in one shared transaction, so the system cannot
 | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Notion returns the same page repeatedly                 | Unique `notionPageId` and state check skip it                                  |
 | Two workers see one `ready` page                        | Atomic MongoDB claim allows one winner                                         |
-| Text is empty or too long                               | Reject before claiming or calling X                                      |
+| Text is empty or too long                               | Reject before claiming or calling X                                            |
 | Process crashes before publication starts               | Resume from the stored safe state                                              |
 | Publication may have occurred but no response was saved | Mark/retain `publish_started`; require reconciliation and never auto-republish |
-| X returns a post ID but Notion update fails       | Store the X result, then retry only the Notion update                    |
-| Notion or X returns a rate limit                  | Respect retry guidance and back off only where retry is safe                   |
+| X returns a post ID but Notion update fails             | Store the X result, then retry only the Notion update                          |
+| Notion or X returns a rate limit                        | Respect retry guidance and back off only where retry is safe                   |
 | Token expires                                           | Stop with a credential-specific error; do not treat it as a content failure    |
 | Analytics runs overlap                                  | Add a MongoDB lease when analytics scheduling is introduced                    |
 | A metric is unavailable                                 | Leave it unset and continue updating supported metrics                         |
@@ -242,16 +242,16 @@ These are design references, not evidence that X is connected. No X credentials,
 
 ## Decisions
 
-| Decision             | MVP choice                                                |
-| -------------------- | --------------------------------------------------------- |
-| Package manager      | npm                                                       |
-| Account model        | one owner/X account                                 |
-| Trigger              | manual CLI, then polling                                  |
-| Persistence          | MongoDB when Phase 4 begins                               |
-| MongoDB client       | official driver, no Mongoose                              |
-| Local MongoDB        | Reconfirm Docker versus a managed free cluster in Phase 4 |
-| Process architecture | one codebase, separate entry points                       |
-| Scheduling           | external scheduler later                                  |
-| Queue                | postponed                                                 |
-| AI                   | outside MVP and always approval-gated                     |
+| Decision             | MVP choice                                                 |
+| -------------------- | ---------------------------------------------------------- |
+| Package manager      | npm                                                        |
+| Account model        | one owner/X account                                        |
+| Trigger              | manual CLI, then polling                                   |
+| Persistence          | MongoDB when Phase 4 begins                                |
+| MongoDB client       | official driver, no Mongoose                               |
+| Local MongoDB        | Reconfirm Docker versus a managed free cluster in Phase 4  |
+| Process architecture | one codebase, separate entry points                        |
+| Scheduling           | external scheduler later                                   |
+| Queue                | postponed                                                  |
+| AI                   | outside MVP and always approval-gated                      |
 | Node version         | supported Node 24; verify the active runtime before checks |

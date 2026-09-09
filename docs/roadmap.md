@@ -48,7 +48,7 @@ Completion note: the temporary `GET /posts` route is a later learning exercise, 
 
 ### Phase 2 — Notion adapter
 
-Status: in progress — both read-only CLIs were manually verified with the test database/post. On 2026-09-08 the user confirmed all five focused empty-text validation tests passed. The live CLI rejection path, whole-schema validation, full ContentPost mapping, and remaining content eligibility rules are still pending.
+Status: in progress — the read-only Notion schema validation and ContentPost mapping flow is implemented and manually verified. Publication fields remain reserved null values. Next: review Stage 2 exit criteria and explain the work before X setup. Follow the critical-only, milestone-based testing policy in AGENTS.md; detailed verification history lives in PROJECT_CONTEXT.md.
 
 - re-check current official Notion API and SDK documentation
 - create or connect the Notion integration

@@ -8,7 +8,7 @@ A learning-focused, production-minded Node.js application that will publish expl
 
 The publishing target is **X (Twitter)**, following the user's decision on 2026-09-08. Threads is no longer part of the product plan. [ADR 004](docs/decisions/004-target-x-twitter.md) records the change.
 
-The local folder/npm package and Notion connection still use `notion-threads-automation`; the existing Notion database is still titled `Threads Posts`. These are retained names, not a second publishing target. Keep using the existing folder, database IDs, and connection. The package description and temporary `GET /posts` mock field `threadsUrl` also retain their old names; no production publisher exists. New planned publication fields are `xPostId` and `xUrl`.
+The local folder/npm package and Notion connection still use `notion-threads-automation`; the existing Notion database is still titled `Threads Posts`. These are retained names, not a second publishing target. Keep using the existing folder, database IDs, and connection. The package description and temporary `GET /posts` mock field `threadsUrl` also retain their old names; no production publisher exists. The domain model now includes `xPostId`, `xUrl`, and `publishedAt`; they are reserved null values until publication metadata is connected.
 
 ## MVP goal
 
@@ -105,9 +105,11 @@ Preview posts with Status equal to `ready`:
 npm run notion:posts
 ```
 
-This command reads all result pages and prints `{ count, posts }` with each post's Notion page ID, title, text, topic, and status. No matching posts produces `{ "count": 0, "posts": [] }`. It checks the four property types on returned posts and fails on incomplete entries rather than presenting them as valid posts. A ready post with empty or whitespace-only Text stops the command with exit code 1 and an error containing the Notion page ID; no partial preview is printed. Nonempty text keeps its original spacing and line breaks. The command makes no external writes, regardless of `DRY_RUN`. Preview output is not publication approval: length limits, the full ContentPost model, and duplicate protection are still pending.
+This command first reads and validates the data-source schema, then reads all result pages and prints `{ count, posts }` with each post's Notion page ID, title, text, topic, status, and reserved publication fields (`xPostId`, `xUrl`, `publishedAt`). The reader now returns `ReadyContentPost`, the ready-status form of the shared `ContentPost` model. Publication fields currently always equal `null`: they are not read from Notion or MongoDB, and must not be used as proof that a post was never published. It requires exact property names/types: `Name` (`title`), `Text` (`rich_text`), `Topic` (`select`), and `Status` (`status`), including the exact status options `draft`, `ready`, and `published`. Additional properties and options are allowed. Invalid schema stops the command with a clear error before querying posts, even if there would be no matching posts. With a valid schema, no matching posts produces `{ "count": 0, "posts": [] }`.
 
-Run the complete local quality checks:
+It also checks the four property types on returned posts and fails on incomplete entries rather than presenting them as valid posts. A ready post with empty or whitespace-only Text stops the command with exit code 1 and an error containing the Notion page ID; no partial preview is printed. Nonempty text keeps its original spacing and line breaks. The command makes no external writes, regardless of `DRY_RUN`. Preview output is not publication approval: X-specific length rules, loading publication metadata, and duplicate protection are still pending. A repeated pagination cursor stops the command instead of looping indefinitely. The Notion read path has been manually verified; current verification details are recorded in PROJECT_CONTEXT.md.
+
+Use a small critical-path test suite and batch checks at meaningful milestones. Share only a pass/fail summary or the relevant error. The full checks below are available for release/risky changes, not required after every small edit:
 
 ```bash
 npm test
@@ -144,6 +146,6 @@ npm run format:check
 - The health route and application foundation exist; publishing is not implemented.
 - `GET /posts` returns temporary in-memory learning data and is not a production content source.
 - The read-only Notion schema CLI works. X and MongoDB connections are not implemented.
-- Ready-post preview reading and basic field mapping were manually verified with one post. Whole-schema validation, publication eligibility, and the full ContentPost model remain to be implemented.
+- The Notion read/model path has been manually verified. Publication metadata loading and remaining publication eligibility rules are not implemented. See PROJECT_CONTEXT.md for current verification status.
 - X publishing and metrics endpoints have not been called.
 - The project is not production-ready.

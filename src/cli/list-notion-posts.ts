@@ -7,6 +7,7 @@ import { isNotionClientError } from '@notionhq/client';
 import { parseNotionEnv } from '../config/notion.js';
 import { createNotionClient } from '../integrations/notion.js';
 import { NotionPostDataError, readReadyNotionPosts } from '../integrations/notion-posts.js';
+import { NotionSchemaError } from '../integrations/notion-schema.js';
 
 async function main(): Promise<void> {
   try {
@@ -38,7 +39,7 @@ async function main(): Promise<void> {
 
     console.log(JSON.stringify({ count: posts.length, posts }, null, 2));
   } catch (error: unknown) {
-    if (error instanceof NotionPostDataError) {
+    if (error instanceof NotionPostDataError || error instanceof NotionSchemaError) {
       console.error(error.message);
     } else {
       const code = isNotionClientError(error) ? error.code : 'request_failed';

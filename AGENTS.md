@@ -39,6 +39,14 @@ Optional AI work begins only after the core publishing workflow is stable. AI ou
 - The user installs dependencies personally. Provide the exact command and explain why the dependency is needed; do not install it unless the user explicitly changes this preference.
 - Do not run the development server, tests, builds, linters, or formatters unless the user explicitly asks. Never claim a check passed unless it was actually run.
 
+## Focused testing and token budget
+
+- Keep tests for critical behavior and representative failures, not exhaustive field/status/whitespace matrices or trivial details. Add cases for real regressions or materially different risks.
+- Preserve production safety guards, secret protection, dry-run, and future duplicate-publication protection. Do not hide exhaustive cases in loops to reduce the displayed count.
+- Batch relevant checks at milestones; do not demand a full test/lint/build/format/live-read cycle after every small edit. Request short pass/fail summaries or specific errors, not full successful logs.
+- Keep communication and file reads focused. Record milestones in PROJECT_CONTEXT.md; avoid repeating test histories across stable documents or updating every document after each command.
+- Existing restrictions on running checks, installing dependencies, Git, and external writes remain in force.
+
 ## Engineering baseline
 
 - Node.js 24, TypeScript, strict mode, ES modules, and npm.
