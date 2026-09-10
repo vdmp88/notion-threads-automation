@@ -1,6 +1,6 @@
 # Roadmap
 
-Last reviewed: 2026-09-08
+Last reviewed: 2026-09-10
 
 This roadmap separates the short learning exercises from the production MVP. A learning exercise may introduce a concept without becoming part of the final architecture.
 
@@ -8,7 +8,11 @@ The active product target is **Notion → X (Twitter)**. The user replaced Threa
 
 ## Learning track
 
-Purpose: understand HTTP and backend data flow before external integrations add complexity.
+Purpose: learn to independently build backend logic for web applications. The user clarified this goal on 2026-09-10, with shops, blogs, learning apps, and simple AI agents as examples. For now the assistant implements the project code, explains each new mechanism, and then offers small optional exercises.
+
+Immediate priority: review the existing Stage 2 Notion flow before new features or X setup. Start with the CLI process and configuration, then explain the SDK request, schema validation, mapping, and success/error output. Product implementation and learning progress are tracked separately in PROJECT_CONTEXT.md; completed code does not establish mastery.
+
+Existing HTTP exercises:
 
 - [x] Understand the Fastify application lifecycle.
 - [x] Add and manually verify `GET /health`.
@@ -19,6 +23,16 @@ Purpose: understand HTTP and backend data flow before external integrations add 
 - [ ] Decide when the temporary Posts API has taught enough and stop extending in-memory storage.
 
 The temporary route is not the production source of content. Notion remains the editorial source for the MVP.
+
+Broader learning topics to revisit as prerequisites and understanding allow:
+
+- HTTP request/response flow, methods, status codes, parameters, request bodies, validation, and connecting a React/Next.js UI to an API.
+- Persistent data modeling, CRUD, indexes, atomic operations, transactions, and when relational versus document storage fits. Keep the approved MongoDB choice for this product.
+- Business rules and service boundaries, authentication versus authorization, sessions/cookies, and ownership checks for user data.
+- External APIs and background work: timeouts, retries, idempotency, partial failures, and later AI tool calls with controlled permissions.
+- Debugging, useful tests and logs, application lifecycle, deployment configuration, and secrets.
+
+These are learning directions, not additional MVP features or a requirement to cover every topic before finishing this project. Use current code when it demonstrates the concept; choose small separate exercises for gaps such as multi-user authorization. Plan the second project's scope with the user later.
 
 ## Product phases
 

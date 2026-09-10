@@ -1,6 +1,6 @@
 # Project context
 
-Last context update: 2026-09-08. Verification dates for code and checks are recorded below.
+Last context update: 2026-09-10. Verification dates for code and checks are recorded below.
 
 ## Purpose
 
@@ -32,12 +32,16 @@ The Notion CLI work and completed text-rule tests remain valid. The user has now
 
 ## User and working style
 
-- The user is a React frontend developer learning Node.js and backend development.
-- Explanations should be concise, concrete, and in plain Russian.
+- The user is a React/Next.js frontend developer learning Node.js and backend development. On 2026-09-10, they clarified the long-term goal: become a full-stack developer able to independently build backend logic for shops, blogs, learning apps, and simple AI agents.
+- The assistant implements all project code for now. The user wants to understand the mechanisms well enough to implement a second project independently.
+- Explain new mechanisms in detail, concretely and in plain Russian. Reduce repetition and administrative overhead, not the explanation needed for understanding.
+- User preference on 2026-09-10: explanation first, then small optional exercises. Offer predictions, error tracing, or a small local change after the relevant concept has been explained; do not make required project implementation homework.
 - User decision on 2026-09-08: critical-only tests, representative cases, batched checks, and short result summaries. Reduce token overhead and avoid repeated test/log/documentation round trips.
 - Work one small step at a time and reconnect backend concepts to familiar frontend ideas when helpful.
 - The user installs dependencies personally.
 - Do not run tests, builds, linters, formatters, or the development server unless explicitly requested.
+- A feature is not complete as a learning step merely because its code and tests work. Before advancing to the next product phase, explain the feature end to end in plain Russian: entry point, data flow, responsibilities of each file, important backend concepts, failure path, and how the user can inspect the behavior themselves. Allow discussion and optional practice before adding another major abstraction; exercises are not mandatory gates, and the user may explicitly choose to continue.
+- Track implementation/verification separately from explanations, user-confirmed understanding or practice, and topics needing review. The broader learning topics in `docs/roadmap.md` are not new MVP requirements.
 
 ## Product goal
 
@@ -169,6 +173,13 @@ Do not assume every concept is fully mastered. Briefly reconnect new code to the
 ## Current checkpoint
 
 The user chose the product track and wants publishing to run first as a finite manual CLI command. Fastify remains in the project for backend learning, health checks, and future HTTP integrations, but route handlers must not own publishing logic.
+
+Teaching checkpoint added on 2026-09-09, clarified on 2026-09-10:
+
+- The user reported that Stage 2 was implemented faster than it was taught and does not yet have a clear mental model of how the Notion token, CLI commands, SDK client, schema/post readers, mapping, validation, and console output connect.
+- Do not start Phase 3 or add more Stage 2 features yet. First walk through the existing Stage 2 flow in small lessons, using frontend analogies where useful. Treat the review as incomplete until the user can follow the data from `.env` through `npm run notion:posts` to the printed `ContentPost` objects and understands the role of each Stage 2 file.
+- Learning status: the Stage 2 explanation and practice remain pending. Start with how `npm run notion:posts` launches the CLI/Node.js process and how environment configuration reaches the program; inspect the relevant source before teaching it. Then cover the SDK client/request, schema validation, mapping, and the success/error output in subsequent small lessons.
+- On 2026-09-10, updated AGENTS.md and the learning roadmap to reflect assistant-owned implementation, detailed explanation before optional practice, and the broader full-stack goal. No application code or verification status changed in this documentation step.
 
 Progress on 2026-09-07:
 
