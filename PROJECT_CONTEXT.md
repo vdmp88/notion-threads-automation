@@ -1,6 +1,6 @@
 # Project context
 
-Last context update: 2026-09-10. Verification dates for code and checks are recorded below.
+Last context update: 2026-10-05. Verification dates for code and checks are recorded below.
 
 ## Purpose
 
@@ -35,6 +35,7 @@ The Notion CLI work and completed text-rule tests remain valid. The user has now
 - The user is a React/Next.js frontend developer learning Node.js and backend development. On 2026-09-10, they clarified the long-term goal: become a full-stack developer able to independently build backend logic for shops, blogs, learning apps, and simple AI agents.
 - The assistant implements all project code for now. The user wants to understand the mechanisms well enough to implement a second project independently.
 - Explain new mechanisms in detail, concretely and in plain Russian. Reduce repetition and administrative overhead, not the explanation needed for understanding.
+- Keep repository documentation in English. Explain backend mechanisms and architectural choices in Russian in chat. As clarified on 2026-10-05, avoid comprehension questions about obvious exception propagation or console output; focus on how backend components work and why their responsibilities are separated.
 - User preference on 2026-09-10: explanation first, then small optional exercises. Offer predictions, error tracing, or a small local change after the relevant concept has been explained; do not make required project implementation homework.
 - User decision on 2026-09-08: critical-only tests, representative cases, batched checks, and short result summaries. Reduce token overhead and avoid repeated test/log/documentation round trips.
 - Work one small step at a time and reconnect backend concepts to familiar frontend ideas when helpful.
@@ -172,6 +173,16 @@ Do not assume every concept is fully mastered. Briefly reconnect new code to the
 
 ## Current checkpoint
 
+Stage 2 closure approved on 2026-10-05:
+
+- Implementation: close Phase 2 as the read-only Notion adapter. Configuration, schema inspection/validation, ready-post queries, pagination, mapping, and nonempty-text validation already satisfy its read-only exit criterion. The user approved moving the unimplemented controlled Notion updates to Phase 4 with publication metadata and persisted results. No application code changes were needed.
+- Verification: source review and historical user-shared results only. No tests, builds, typechecks, linters, formatters, live API calls, or Git operations were run for closure. Existing reduced tests remain unrun.
+- Learning: explained process/configuration, SDK construction versus requests, dependency passing, schema checks, and pagination. After correction, the user located the first network-dependent operation and correctly identified schema validation before row queries. Adapter/domain boundaries and the architectural reason for passing dependencies remain topics to reinforce; do not infer mastery from simple output questions. These are not gates to Phase 3.
+- Documentation: the user reverted the previous closure edits and Russian walkthrough. Do not restore that walkthrough. This approved closure updates only existing English README, roadmap, and context, keeping the scope change explicit.
+- Next: research current official X API access, pricing, user-context authentication, and text rules before implementing the X adapter. No paid calls, external writes, or publication are authorized by this phase transition. Keep DRY_RUN=true.
+
+### Earlier checkpoints (historical)
+
 The user chose the product track and wants publishing to run first as a finite manual CLI command. Fastify remains in the project for backend learning, health checks, and future HTTP integrations, but route handlers must not own publishing logic.
 
 Teaching checkpoint added on 2026-09-09, clarified on 2026-09-10:
@@ -259,7 +270,7 @@ Testing-policy update on 2026-09-08:
 At the start of the next development task:
 
 1. Use this local repository only; Git and command execution remain user-controlled.
-2. The read-only Notion schema and ContentPost path is implemented and manually verified, including the three null publication fields. Review Stage 2 exit criteria without adding exhaustive tests or repeating prior live checks.
+2. Phase 2 is closed as a read-only adapter. Controlled Notion writes are explicitly assigned to Phase 4; the three null publication fields are placeholders.
 3. Batch relevant checks and ask only for a summary or errors. Lint/build/format remain unverified; do not claim they passed or make them a gate after every small edit.
-4. Before X implementation, give the detailed Stage 2 explanation the user requested. X-specific text limits belong to Phase 3; metadata synchronization and duplicate protection belong to the publishing workflow.
+4. Proceed to Phase 3 access/pricing and authentication research. Reinforce adapter/domain boundaries and dependency passing during backend explanations, without quizzes about obvious output. X-specific text limits belong to Phase 3; metadata synchronization and duplicate protection belong to Phase 4.
 5. Keep DRY_RUN=true. Null metadata is not proof of no prior publication. Do not write to Notion or publish without explicit approval.

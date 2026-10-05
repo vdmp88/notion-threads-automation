@@ -2,7 +2,7 @@
 
 A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single X account.
 
-> **Current status:** Phase 1 foundation is complete. Phase 2 is in progress: the user successfully ran `notion:inspect` and retrieved one ready post with `notion:posts`. Publication validation, publishing, and MongoDB integration remain to be implemented.
+> **Current status:** Phase 2 is complete as a read-only Notion adapter: schema inspection/validation, ready-post queries, mapping, and nonempty-text validation are implemented. Controlled Notion updates are assigned to Phase 4. Next: Phase 3 access/pricing and authentication research for X. Closure relies on source review and previously recorded verification; no new checks were run.
 
 ## Naming and scope
 
@@ -123,7 +123,7 @@ npm run format:check
 
 - Phase 0: discovery, architecture, safe repository baseline — complete
 - Phase 1: TypeScript/Fastify foundation and tests — complete
-- Phase 2: Notion schema inspection and mapping
+- Phase 2: read-only Notion schema inspection and mapping — complete
 - Phase 3: X authentication and an explicitly approved test post
 - Phase 4: idempotent publishing workflow backed by MongoDB
 - Phase 5: safe recurring execution

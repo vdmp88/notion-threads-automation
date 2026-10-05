@@ -1,6 +1,6 @@
 # Roadmap
 
-Last reviewed: 2026-09-10
+Last reviewed: 2026-10-05
 
 This roadmap separates the short learning exercises from the production MVP. A learning exercise may introduce a concept without becoming part of the final architecture.
 
@@ -10,7 +10,7 @@ The active product target is **Notion → X (Twitter)**. The user replaced Threa
 
 Purpose: learn to independently build backend logic for web applications. The user clarified this goal on 2026-09-10, with shops, blogs, learning apps, and simple AI agents as examples. For now the assistant implements the project code, explains each new mechanism, and then offers small optional exercises.
 
-Immediate priority: review the existing Stage 2 Notion flow before new features or X setup. Start with the CLI process and configuration, then explain the SDK request, schema validation, mapping, and success/error output. Product implementation and learning progress are tracked separately in PROJECT_CONTEXT.md; completed code does not establish mastery.
+Immediate priority: begin Phase 3 with X access/pricing and authentication research. Continue explaining adapter/domain boundaries and dependency passing through concrete backend work; these remain learning topics, not implementation blockers. Ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
 
 Existing HTTP exercises:
 
@@ -62,17 +62,18 @@ Completion note: the temporary `GET /posts` route is a later learning exercise, 
 
 ### Phase 2 — Notion adapter
 
-Status: in progress — the read-only Notion schema validation and ContentPost mapping flow is implemented and manually verified. Publication fields remain reserved null values. Next: review Stage 2 exit criteria and explain the work before X setup. Follow the critical-only, milestone-based testing policy in AGENTS.md; detailed verification history lives in PROJECT_CONTEXT.md.
+Status: complete as a read-only adapter, with the scope clarification approved on 2026-10-05. The exit criterion is implemented and has recorded earlier manual verification; no new checks were run for closure. Publication fields remain reserved null values. Learning gaps and verification history are tracked separately in PROJECT_CONTEXT.md.
 
 - re-check current official Notion API and SDK documentation
 - create or connect the Notion integration
 - retrieve the real data-source schema
 - validate expected property names and types
 - map eligible pages to `ContentPost`
-- update controlled Notion properties
 - test mapping and invalid-schema cases with mocked responses
 
 Exit criterion: the application can read and validate `ready` posts without publishing or changing external state in dry-run mode.
+
+Approved scope clarification: controlled Notion-property updates move to Phase 4 alongside persisted publication results. X-specific text rules belong to Phase 3; publication metadata and duplicate protection belong to Phase 4. Current CLI commands are always read-only, including when DRY_RUN is false; a publishing dry-run workflow is not implemented. Existing tests are retained; the reduced suite remains unrun, and no tests were added or run for closure.
 
 ### Phase 3 — X (Twitter) adapter
 
@@ -96,7 +97,7 @@ Status: not started.
 - create the publication collection and unique indexes
 - atomically claim a Notion page
 - persist the publication state machine and external identifiers
-- update Notion after successful publication
+- load publication metadata and implement controlled Notion-property updates after successful publication (write-adapter work moved from Phase 2)
 - handle ambiguous outcomes without automatic republishing
 - test eligibility, dry-run, duplicate protection, and recovery rules
 
