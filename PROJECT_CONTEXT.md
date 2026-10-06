@@ -18,17 +18,17 @@ Confirmed with the user on 2026-09-07:
 
 ## Publishing target and retained names
 
-Decision on 2026-09-08: the product is **Notion → X (Twitter)**. This replaces the earlier Threads plan; a Threads adapter is not required. See [ADR 004](docs/decisions/004-target-x-twitter.md).
+Decision on 2026-10-05: return to **Notion → Threads** after the user declined paid X API usage. X is no longer in scope; [ADR 005](docs/decisions/005-return-to-threads.md) supersedes ADR 004. Do not introduce a multi-platform abstraction.
 
-This is a documentation/plan change. Existing source code, secrets, repository identity, and external Notion resources were not renamed or migrated:
+This is a documentation/plan change, not a code or external-resource migration:
 
-- Local folder and npm package remain named `notion-threads-automation`; the package description also retains its historical wording.
-- The Notion connection is still `notion-threads-automation` and the database title is still `Threads Posts`. Historical screenshots and successful command output below retain these exact names. Continue using the existing database/data-source IDs and token.
-- The temporary learning `GET /posts` still contains a `threadsUrl` field and an example URL. This is legacy mock data, not an active publishing integration or the future domain model.
-- New documentation uses `xPostId`, `xUrl`, and planned Notion properties `X Post ID` / `X URL`. Those publication fields do not exist in the current four-column Notion database yet.
-- The unused Threads/Meta placeholders were removed from `.env.example`. X authentication settings will be specified when the Phase 3 auth flow is selected; the local `.env` was not changed.
+- Keep the folder/npm package and Notion connection `notion-threads-automation`, database `Threads Posts`, existing database/data-source IDs, and token.
+- Current `ContentPost`, mapper, tests, and CLI output still use `xPostId` and `xUrl` as null placeholders. Rename them to `threadsPostId` and `threadsUrl` in a separate explained Phase 3 code step. Do not claim this migration is implemented.
+- Planned Notion properties are `Threads Post ID` and `Threads URL`; publication properties have not been added to the four-column database.
+- The temporary `GET /posts` is still mock data, not a publishing integration.
+- Threads/Meta placeholders were previously removed from `.env.example`. Define the required settings during authentication implementation; neither the template nor the local `.env` changed in this documentation step.
 
-The Notion CLI work and completed text-rule tests remain valid. The user has now verified live empty-text rejection and the subsequent successful valid-post read (see the checkpoint below). No X account, developer app, API access, cost, or publication has been configured or verified. Before Phase 3, check current official X access/pricing, user-context authentication, and text-length counting rules. Do not carry over the old container flow, permissions, token lifetimes, or text limit.
+Phase 2 remains complete as a read-only Notion adapter. No Threads developer app, tester access, token, or publication has been configured or verified for the user. Do not transfer X-specific endpoints, PKCE assumptions, or text-counting rules to Threads.
 
 ## User and working style
 
@@ -46,7 +46,7 @@ The Notion CLI work and completed text-rule tests remain valid. The user has now
 
 ## Product goal
 
-Build a learning-focused but production-minded Notion → X (Twitter) application that publishes manually approved content to one X account.
+Build a learning-focused but production-minded Notion → Threads application that publishes manually approved content to one Threads account.
 
 ```text
 User writes or edits content in Notion
@@ -59,11 +59,11 @@ MongoDB claims and tracks the publication safely
                 ↓
 DRY_RUN=false plus explicit human approval
                 ↓
-X publishes the post
+Threads publishes the post
                 ↓
 Post ID, URL, time, and published status return to Notion
                 ↓
-Later: supported X metrics synchronize to Notion
+Later: supported Threads metrics synchronize to Notion
                 ↓
 Much later: optional AI helps draft and analyze content
 ```
@@ -78,13 +78,13 @@ The first working MVP must:
 2. Map it to an internal `ContentPost` model.
 3. Validate text and publication eligibility.
 4. Simulate the workflow by default with `DRY_RUN=true` and no external writes.
-5. After explicit approval and with dry-run disabled, publish one text post to X.
+5. After explicit approval and with dry-run disabled, publish one text post to Threads.
 6. Store a publication record in MongoDB.
-7. Write the X ID, URL, publication time, and `published` status back to Notion.
+7. Write the Threads ID, URL, publication time, and `published` status back to Notion.
 8. Prevent intentional duplicate publication of the same Notion page.
 9. Run initially as a finite manual CLI command with understandable errors and tests for core business rules.
 
-Outside the MVP: AI generation, automatic AI publication, Notion webhooks, scheduled posts, internal cron loops, queues, microservices, multiple X users, a dashboard, and complex deployment.
+Outside the MVP: AI generation, automatic AI publication, Notion webhooks, scheduled posts, internal cron loops, queues, microservices, multiple Threads users, a dashboard, and complex deployment.
 
 ## Approved decisions
 
@@ -92,25 +92,25 @@ Outside the MVP: AI generation, automatic AI publication, Notion webhooks, sched
 - Fastify for HTTP and Zod for runtime validation.
 - Structured logs through Fastify/Pino.
 - Official Notion JavaScript SDK.
-- Native `fetch` for X.
+- Native `fetch` for Threads.
 - Official MongoDB Node.js driver without Mongoose.
 - Vitest, ESLint, and Prettier.
 - One codebase with separate HTTP and finite CLI entry points.
-- One owner and one X account for the MVP.
+- One owner and one Threads account for the MVP.
 - Manual execution first; external scheduling later.
-- No paid infrastructure or paid X API usage without explicit approval.
+- Use a no-paid-service learning path; ask before introducing any paid service.
 
 ## Safety and reliability
 
-- `DRY_RUN=true` is the default. Dry-run must not publish to X, update Notion, or write a publication record.
+- `DRY_RUN=true` is the default. Dry-run must not publish to Threads, update Notion, or write a publication record.
 - A real publication requires explicit confirmation immediately before the external action.
 - Secrets must stay in ignored environment variables and must not appear in source code, client code, logs, or examples.
 - Use a unique `notionPageId` and an atomic MongoDB claim to prevent concurrent duplicate publication.
 - Persist external identifiers and progress so crashes can be reconciled.
-- If X may have published but the outcome is ambiguous, never automatically publish again.
-- If X succeeds and the Notion update fails, retain the X result and retry only the Notion update.
+- If Threads may have published but the outcome is ambiguous, never automatically publish again.
+- If Threads succeeds and the Notion update fails, retain the Threads result and retry only the Notion update.
 
-## Domain model direction
+## Current domain model (legacy names; migration pending)
 
 ```ts
 type PostStatus = 'draft' | 'ready' | 'published';
@@ -127,7 +127,7 @@ interface ContentPost {
 }
 ```
 
-Raw Notion and X responses stay inside their adapters and are mapped to stable internal types.
+Raw Notion and Threads responses stay inside their adapters and are mapped to stable internal types.
 
 ## Current implementation state
 
@@ -152,7 +152,7 @@ Not implemented:
 - persistent Posts API
 - MongoDB connection and publication repository
 - publication metadata loading and remaining publication eligibility validation (ContentPost editorial mapping now exists; see the latest checkpoint for unrun changes)
-- X authentication or publishing (the previous Threads target was replaced on 2026-09-08)
+- Threads authentication or publishing
 - publishing service and idempotency state machine
 - analytics, scheduling, AI, or deployment
 
@@ -173,13 +173,34 @@ Do not assume every concept is fully mastered. Briefly reconnect new code to the
 
 ## Current checkpoint
 
+Return to Threads approved on 2026-10-05:
+
+- Decision: the user explicitly chose Threads again and requested documentation updates. X integration and billing setup are abandoned.
+- Research: read official Meta pages in the browser: [Get started](https://developers.facebook.com/documentation/threads/get-started), [app setup](https://developers.facebook.com/documentation/development/create-an-app/threads-use-case), [overview and limits](https://developers.facebook.com/documentation/threads/overview), and [posts](https://developers.facebook.com/documentation/threads/posts).
+- Cost: the reviewed setup contains no required subscription, credits, or per-post charge. Threads is the selected no-paid-API path based on these documents, not an official promise of permanent free access. Account-specific access is still unverified.
+- Access: own-account development can use a Threads Tester invitation accepted by that profile. Users without an app role require approved permissions through App Review and a published app. Publishing requires `threads_basic` and `threads_content_publish`.
+- Tokens: user access tokens; short-lived tokens last one hour and can be exchanged for long-lived tokens lasting 60 days. Refresh and permission-grant lifetimes need explicit handling; do not assume a permanent token.
+- Publication: create a container via `POST /{threads-user-id}/threads`, then publish via `POST /{threads-user-id}/threads_publish`. Documented ordinary text limit: 500 characters; publication quota: 250 posts per rolling 24 hours. Verify Unicode/emoji counting before implementing validation.
+- Implementation/verification: documentation only. No code, environment files, external schemas, or accounts changed. No Git commands, tests, builds, typechecks, linters, formatters, app commands, or API publication calls were run. Documentation was reviewed locally.
+- Learning: gave a short overview of tester access, permissions, token expiry, and two-step publishing. These mechanisms have not yet been taught through code or demonstrated by the user. Continue reinforcing adapter/domain boundaries.
+- Next: explain Meta app identity versus the user's access token and permissions, then guide app/tester setup with the user's participation. Make the legacy field rename a separate small code step before implementing the Threads adapter. Keep DRY_RUN=true; no real publication is authorized by the target switch.
+
+### Superseded X research on 2026-10-05 (historical, not an action plan)
+
+- Official [pricing](https://docs.x.com/x-api/getting-started/pricing) lists prepaid pay-per-use access: ordinary post creation USD 0.015/request; creation with a URL USD 0.200/request. At those rates, 30 creations cost USD 0.45 or USD 6 respectively, excluding other operations. Spending limits are available. Conditional promotional credits are not a permanent free publishing tier. The user's console, eligibility, balance, and any required top-up amount have not been inspected; paid access has not been approved.
+- [Getting access](https://docs.x.com/x-api/getting-started/getting-access) requires a developer account and app. App-only Bearer tokens do not authorize posting as a user. OAuth 1.0a owner Access Token/Secret is a supported personal-automation alternative. Recommend OAuth 2.0 Authorization Code with PKCE for this learning project: fine-grained permissions and a reusable authorization/callback/refresh pattern, with more initial setup than owner tokens. Recommendation only; nothing configured or implemented.
+- [OAuth 2.0 reference](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code) documents user consent, exact callback matching, state, PKCE, and offline.access for refresh tokens. Implementation should use S256, validate state, keep credentials server-side, and persist refresh changes safely. Do not treat offline.access as making an access token permanent; honor expires_in.
+- Publication endpoint: [POST /2/tweets](https://docs.x.com/x-api/posts/create-post). Check required permissions against the [authentication mapping](https://docs.x.com/fundamentals/authentication/guides/v2-authentication-mapping) before implementation.
+- [Character counting](https://docs.x.com/fundamentals/counting-characters) describes the standard 280 weighted-character limit, URLs counted as 23, and recommends twitter-text. A simple string.length check is insufficient. No dependency was installed or selected version pinned.
+- Historical next action (superseded): present pricing and obtain the user's decision on paid X integration before account/billing setup. No X API requests, external writes, code changes, tests, or app commands were performed; only public documentation was browsed and English project status updated. Keep DRY_RUN=true.
+
 Stage 2 closure approved on 2026-10-05:
 
 - Implementation: close Phase 2 as the read-only Notion adapter. Configuration, schema inspection/validation, ready-post queries, pagination, mapping, and nonempty-text validation already satisfy its read-only exit criterion. The user approved moving the unimplemented controlled Notion updates to Phase 4 with publication metadata and persisted results. No application code changes were needed.
 - Verification: source review and historical user-shared results only. No tests, builds, typechecks, linters, formatters, live API calls, or Git operations were run for closure. Existing reduced tests remain unrun.
 - Learning: explained process/configuration, SDK construction versus requests, dependency passing, schema checks, and pagination. After correction, the user located the first network-dependent operation and correctly identified schema validation before row queries. Adapter/domain boundaries and the architectural reason for passing dependencies remain topics to reinforce; do not infer mastery from simple output questions. These are not gates to Phase 3.
 - Documentation: the user reverted the previous closure edits and Russian walkthrough. Do not restore that walkthrough. This approved closure updates only existing English README, roadmap, and context, keeping the scope change explicit.
-- Next: research current official X API access, pricing, user-context authentication, and text rules before implementing the X adapter. No paid calls, external writes, or publication are authorized by this phase transition. Keep DRY_RUN=true.
+- Historical next step (superseded by the Threads decision above): research X access and authentication. No paid calls, external writes, or publication are authorized by this phase transition. Keep DRY_RUN=true.
 
 ### Earlier checkpoints (historical)
 
@@ -272,5 +293,5 @@ At the start of the next development task:
 1. Use this local repository only; Git and command execution remain user-controlled.
 2. Phase 2 is closed as a read-only adapter. Controlled Notion writes are explicitly assigned to Phase 4; the three null publication fields are placeholders.
 3. Batch relevant checks and ask only for a summary or errors. Lint/build/format remain unverified; do not claim they passed or make them a gate after every small edit.
-4. Proceed to Phase 3 access/pricing and authentication research. Reinforce adapter/domain boundaries and dependency passing during backend explanations, without quizzes about obvious output. X-specific text limits belong to Phase 3; metadata synchronization and duplicate protection belong to Phase 4.
+4. Proceed with the Threads Phase 3 checkpoint above: explain app identity, permissions, and tokens, then guide app/tester setup. Rename legacy publication placeholders in a separate code step. Reinforce adapter/domain boundaries and dependency passing during backend explanations, without quizzes about obvious output. Threads-specific text limits belong to Phase 3; metadata synchronization and duplicate protection belong to Phase 4.
 5. Keep DRY_RUN=true. Null metadata is not proof of no prior publication. Do not write to Notion or publish without explicit approval.

@@ -1,14 +1,14 @@
-# Notion to X (Twitter) Content Automation
+# Notion to Threads Content Automation
 
-A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single X account.
+A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single Threads account.
 
-> **Current status:** Phase 2 is complete as a read-only Notion adapter: schema inspection/validation, ready-post queries, mapping, and nonempty-text validation are implemented. Controlled Notion updates are assigned to Phase 4. Next: Phase 3 access/pricing and authentication research for X. Closure relies on source review and previously recorded verification; no new checks were run.
+> **Current status:** Phase 2 is complete as a read-only Notion adapter: schema inspection/validation, ready-post queries, mapping, and nonempty-text validation are implemented. Controlled Notion updates are assigned to Phase 4. Next: Phase 3 Threads app/tester setup and authentication, with explanation before implementation. Closure relies on source review and previously recorded verification; no new checks were run.
 
 ## Naming and scope
 
-The publishing target is **X (Twitter)**, following the user's decision on 2026-09-08. Threads is no longer part of the product plan. [ADR 004](docs/decisions/004-target-x-twitter.md) records the change.
+The publishing target is **Threads**, following the user's decision on 2026-10-05 to avoid paid X API usage. [ADR 005](docs/decisions/005-return-to-threads.md) supersedes the earlier X decision.
 
-The local folder/npm package and Notion connection still use `notion-threads-automation`; the existing Notion database is still titled `Threads Posts`. These are retained names, not a second publishing target. Keep using the existing folder, database IDs, and connection. The package description and temporary `GET /posts` mock field `threadsUrl` also retain their old names; no production publisher exists. The domain model now includes `xPostId`, `xUrl`, and `publishedAt`; they are reserved null values until publication metadata is connected.
+The local folder/npm package and Notion connection remain `notion-threads-automation`; the database remains `Threads Posts`. Keep the existing IDs and connection. This change updates documentation only: the current domain model and CLI output still use `xPostId`, `xUrl`, and `publishedAt` as null placeholders. Renaming the first two to `threadsPostId` and `threadsUrl` is a pending Phase 3 code step, not an implemented migration. The temporary `GET /posts` remains mock data.
 
 ## MVP goal
 
@@ -18,7 +18,7 @@ The first working version will:
 2. Map the external response to an internal `ContentPost` model.
 3. Validate the post text.
 4. Simulate the workflow by default with `DRY_RUN=true`.
-5. After explicit approval and with dry-run disabled, publish one text post to X.
+5. After explicit approval and with dry-run disabled, publish one text post to Threads.
 6. Store a publication record in MongoDB.
 7. Write the post ID, URL, timestamp, and `published` status back to Notion.
 8. Refuse to automatically publish the same Notion page twice.
@@ -41,7 +41,7 @@ AI generation, webhooks, scheduled posts, queues, multi-user authentication, ana
 - Zod runtime validation
 - Pino structured logging through Fastify
 - official Notion JavaScript SDK
-- native `fetch` for the X API
+- native `fetch` for the Threads API
 - official MongoDB Node.js driver without an ODM
 - Vitest, ESLint, and Prettier
 - one codebase with separate HTTP and CLI entry points
@@ -60,21 +60,21 @@ Use a current security-patched Node 24 release. If npm reports `EBADENGINE` whil
 External integration setup:
 
 - Phase 2: a Notion internal connection and the Threads Posts database are configured; read access was verified. Update access will be needed later.
-- Phase 3: an X developer app with user-context write authorization; verify current API access, pricing, and applicable limits before setup. This phase has not started.
+- Phase 3: official Threads documentation reviewed; app/tester setup and authentication are not configured. Start with the owner's Threads Tester account. See PROJECT_CONTEXT.md for dated findings and sources.
 - Phase 4: MongoDB, with the local execution method confirmed before implementation
 - Deployment: a separately approved free or low-cost MongoDB deployment
 
-No paid infrastructure or paid X API usage will be enabled without explicit approval. Phase 3 must confirm the actual access and cost for the user before any paid calls.
+The user wants a no-paid-service learning path. The reviewed Threads setup documents no subscription or per-post charge; this is not a guarantee of permanent pricing. Ask before introducing any paid service.
 
 ## Environment variables
 
 The server runs with safe defaults without a local `.env`. Copy `.env.example` to `.env` when you need to override local settings. Never commit `.env`.
 
-`DRY_RUN` defaults to `true`. In dry-run mode, publishing is simulated and the application must not write to X, Notion, or the publication ledger.
+`DRY_RUN` defaults to `true`. In dry-run mode, publishing is simulated and the application must not write to Threads, Notion, or the publication ledger.
 
-Notion tokens and the X credentials required by the selected authentication flow are server-only values. They must never appear in client-side code or logs.
+Notion tokens and the Threads credentials required by the selected authentication flow are server-only values. They must never appear in client-side code or logs.
 
-Unused Threads/Meta settings have been removed from `.env.example`. X-specific settings will be added when the Phase 3 authentication flow is selected. Existing local Notion settings are unchanged.
+Threads/Meta placeholders were previously removed from `.env.example`. Add only the settings needed by the selected Threads authentication flow in a separate implementation step. The local `.env` is unchanged.
 
 ## Development commands
 
@@ -107,7 +107,7 @@ npm run notion:posts
 
 This command first reads and validates the data-source schema, then reads all result pages and prints `{ count, posts }` with each post's Notion page ID, title, text, topic, status, and reserved publication fields (`xPostId`, `xUrl`, `publishedAt`). The reader now returns `ReadyContentPost`, the ready-status form of the shared `ContentPost` model. Publication fields currently always equal `null`: they are not read from Notion or MongoDB, and must not be used as proof that a post was never published. It requires exact property names/types: `Name` (`title`), `Text` (`rich_text`), `Topic` (`select`), and `Status` (`status`), including the exact status options `draft`, `ready`, and `published`. Additional properties and options are allowed. Invalid schema stops the command with a clear error before querying posts, even if there would be no matching posts. With a valid schema, no matching posts produces `{ "count": 0, "posts": [] }`.
 
-It also checks the four property types on returned posts and fails on incomplete entries rather than presenting them as valid posts. A ready post with empty or whitespace-only Text stops the command with exit code 1 and an error containing the Notion page ID; no partial preview is printed. Nonempty text keeps its original spacing and line breaks. The command makes no external writes, regardless of `DRY_RUN`. Preview output is not publication approval: X-specific length rules, loading publication metadata, and duplicate protection are still pending. A repeated pagination cursor stops the command instead of looping indefinitely. The Notion read path has been manually verified; current verification details are recorded in PROJECT_CONTEXT.md.
+It also checks the four property types on returned posts and fails on incomplete entries rather than presenting them as valid posts. A ready post with empty or whitespace-only Text stops the command with exit code 1 and an error containing the Notion page ID; no partial preview is printed. Nonempty text keeps its original spacing and line breaks. The command makes no external writes, regardless of `DRY_RUN`. Preview output is not publication approval: Threads-specific length rules, loading publication metadata, and duplicate protection are still pending. A repeated pagination cursor stops the command instead of looping indefinitely. The Notion read path has been manually verified; current verification details are recorded in PROJECT_CONTEXT.md.
 
 Use a small critical-path test suite and batch checks at meaningful milestones. Share only a pass/fail summary or the relevant error. The full checks below are available for release/risky changes, not required after every small edit:
 
@@ -124,7 +124,7 @@ npm run format:check
 - Phase 0: discovery, architecture, safe repository baseline — complete
 - Phase 1: TypeScript/Fastify foundation and tests — complete
 - Phase 2: read-only Notion schema inspection and mapping — complete
-- Phase 3: X authentication and an explicitly approved test post
+- Phase 3: Threads authentication and an explicitly approved test post
 - Phase 4: idempotent publishing workflow backed by MongoDB
 - Phase 5: safe recurring execution
 - Phase 6: analytics synchronization
@@ -138,14 +138,14 @@ npm run format:check
 - External inputs and API responses are validated.
 - HTTP requests use timeouts.
 - Access tokens are redacted from logs and error details.
-- A real X post always requires `DRY_RUN=false` and explicit human confirmation.
+- A real Threads post always requires `DRY_RUN=false` and explicit human confirmation.
 - An ambiguous publish result is never retried automatically.
 
 ## Current limitations
 
 - The health route and application foundation exist; publishing is not implemented.
 - `GET /posts` returns temporary in-memory learning data and is not a production content source.
-- The read-only Notion schema CLI works. X and MongoDB connections are not implemented.
+- The read-only Notion schema CLI works. Threads and MongoDB connections are not implemented.
 - The Notion read/model path has been manually verified. Publication metadata loading and remaining publication eligibility rules are not implemented. See PROJECT_CONTEXT.md for current verification status.
-- X publishing and metrics endpoints have not been called.
+- Threads publishing and metrics endpoints have not been called.
 - The project is not production-ready.

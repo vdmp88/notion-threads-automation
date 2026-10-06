@@ -4,13 +4,13 @@ Last reviewed: 2026-10-05
 
 This roadmap separates the short learning exercises from the production MVP. A learning exercise may introduce a concept without becoming part of the final architecture.
 
-The active product target is **Notion → X (Twitter)**. The user replaced Threads on 2026-09-08; completed Notion work is retained. Historical repository and Notion names do not change the target. See [ADR 004](decisions/004-target-x-twitter.md).
+The active product target is **Notion → Threads**, restored by the user on 2026-10-05 to avoid paid X API usage. Completed Notion work is retained. See [ADR 005](decisions/005-return-to-threads.md).
 
 ## Learning track
 
 Purpose: learn to independently build backend logic for web applications. The user clarified this goal on 2026-09-10, with shops, blogs, learning apps, and simple AI agents as examples. For now the assistant implements the project code, explains each new mechanism, and then offers small optional exercises.
 
-Immediate priority: begin Phase 3 with X access/pricing and authentication research. Continue explaining adapter/domain boundaries and dependency passing through concrete backend work; these remain learning topics, not implementation blockers. Ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
+Immediate priority: begin Phase 3 with Threads app/tester setup and an explanation of authorization/token handling. Continue explaining adapter/domain boundaries and dependency passing through concrete backend work; these remain learning topics, not implementation blockers. Ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
 
 Existing HTTP exercises:
 
@@ -73,20 +73,22 @@ Status: complete as a read-only adapter, with the scope clarification approved o
 
 Exit criterion: the application can read and validate `ready` posts without publishing or changing external state in dry-run mode.
 
-Approved scope clarification: controlled Notion-property updates move to Phase 4 alongside persisted publication results. X-specific text rules belong to Phase 3; publication metadata and duplicate protection belong to Phase 4. Current CLI commands are always read-only, including when DRY_RUN is false; a publishing dry-run workflow is not implemented. Existing tests are retained; the reduced suite remains unrun, and no tests were added or run for closure.
+Approved scope clarification: controlled Notion-property updates move to Phase 4 alongside persisted publication results. Threads-specific text rules belong to Phase 3; publication metadata and duplicate protection belong to Phase 4. Current CLI commands are always read-only, including when DRY_RUN is false; a publishing dry-run workflow is not implemented. Existing tests are retained; the reduced suite remains unrun, and no tests were added or run for closure.
 
-### Phase 3 — X (Twitter) adapter
+### Phase 3 — Threads adapter
 
-Status: not started.
+Status: official Threads setup, permissions, tokens, publishing, and limits reviewed on 2026-10-05. The user approved returning to Threads, not account changes or real publication. No app/tester account or token is configured; no publisher is implemented. Sources and learning status are recorded in PROJECT_CONTEXT.md.
 
-- re-check current official X API documentation, endpoint access, and pricing; confirm any cost with the user before paid calls
-- configure the single-user developer app and choose supported user-context authentication with write permissions
-- implement server-side authentication/token handling for that flow
-- validate text using X-specific length/counting rules and validate API responses; do not reuse the former platform limit
-- create one text post through the X API only after explicit approval
-- normalize and sanitize API errors
+- explain the app identity, user authorization, permissions, and token lifecycle before implementation
+- rename legacy `xPostId` / `xUrl` placeholders to `threadsPostId` / `threadsUrl` in a separate focused code step
+- guide single-owner Meta app and Threads Tester setup; use `threads_basic` and `threads_content_publish`
+- implement server-side token handling, including expiry and supported refresh; do not copy the abandoned X PKCE flow
+- validate Threads text/counting rules and API responses; the documented ordinary text limit is 500 characters, but Unicode/emoji counting needs focused verification before coding
+- implement container creation followed by publication using native `fetch`
+- normalize and sanitize API errors; do not retry ambiguous publication automatically
+- publish one isolated test post only with `DRY_RUN=false` and explicit confirmation immediately before the action; this is not the automated Notion publishing workflow
 
-Exit criterion: one approved test post can be published deliberately, with credentials protected and ordinary tests making no real API calls.
+Exit criterion: one approved test post can be published deliberately, with credentials protected and ordinary tests making no real API calls. The Notion-to-publisher workflow remains disabled until Phase 4 duplicate protection exists.
 
 ### Phase 4 — idempotent publishing workflow
 
@@ -116,8 +118,8 @@ Status: postponed until the MVP workflow is stable.
 
 Status: postponed.
 
-- confirm available X metrics, read permissions, and API costs for the selected access level
-- retrieve only supported and authorized X metrics
+- confirm available Threads metrics, required permissions, and current access limits
+- retrieve only supported and authorized Threads metrics
 - normalize unavailable metrics
 - write metrics and the synchronization timestamp to Notion
 - avoid excessive requests and overlapping runs

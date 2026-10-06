@@ -1,6 +1,6 @@
 # ADR 004: Publish from Notion to X (Twitter)
 
-- Status: accepted
+- Status: superseded on 2026-10-05 by [ADR 005](005-return-to-threads.md). The text below preserves the historical decision, not the current plan.
 - Date: 2026-09-08
 
 ## Context
