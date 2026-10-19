@@ -176,6 +176,65 @@ Do not assume every concept is fully mastered. Briefly reconnect new code to the
 
 ## Current checkpoint
 
+Stage 4 implementation and manual end-to-end milestone closed on 2026-10-20:
+
+- The user confirmed that `--sync-only` succeeded after the date-precision fix. The manual path now has evidence for Notion preflight/dry-run, MongoDB connection and persisted publication, Threads publication, Notion result updates, and recovery to `notion_synced` without another post.
+- Closure does not claim exhaustive verification: concurrent claims, duplicate-run rejection, interrupted/ambiguous outcomes, Node 24 parity, and the new automated tests have not been exercised in this stage. Automated checks remain deferred until explicitly requested. No checks or external writes were performed for this status update.
+- Interrupted claims still require manual reconciliation; no automatic reclaim or exactly-once guarantee exists. Keep DRY_RUN=true. Do not reuse the completed page for a fresh publication.
+- Learning is not complete: the end-to-end Stage 3/4 code walkthrough, state transitions, atomic claims, and partial-failure recovery remain to review. Next recommended checkpoint is that walkthrough before adding scheduled execution. Phase 5 has not started and is not authorized by this status question.
+
+### Stage 4 recovery checkpoint (historical)
+
+Stage 4 live publication and date-precision repair on 2026-10-20:
+
+- User successfully ran dry-run and then the approved live publication for page `3fe20a4e-cef0-80d1-9e3b-ea16aeac4859`. User-shared ledger output confirms state `published`, container `18216391969367727`, post `18166064200438556`, and URL `https://www.threads.com/@vd00m_dev/post/DesboauCpAN`. The user confirmed Notion result fields were updated.
+- A user-approved read-only Notion request confirmed matching text, post ID, URL, and published status. The failure was exact timestamp comparison: ledger `2026-10-19T23:24:59.033Z` versus Notion `2026-10-19T23:24:00.000+00:00`. Notion had successfully stored the result; readback verification rejected its minute precision before marking the ledger synchronized.
+- Fixed both the conflict precheck and final readback check to compare UTC minute buckets. Exact MongoDB timestamps remain unchanged; a different minute still conflicts, and a missing readback date still fails. Added one focused regression test for observed precision, timezone equivalence, next-minute rejection, and timestamp preservation; not run.
+- No tests, typecheck, build, lint, formatter, live synchronization, database write, or publication was run for the repair. Next: user runs the existing command with `--sync-only`, confirms PREPARE and SYNC, and shares the result. Do not republish or reset the record. Stage 4 remains open until recovery is confirmed. Earlier setup/verification notes below are historical.
+
+### Earlier Stage 4 implementation checkpoint
+
+Stage 4 integrated CLI and Notion synchronization implemented on 2026-10-20:
+
+- Added `integrations/notion-publication.ts`: read-only schema preflight for the three publication columns; metadata-aware page reads with configured-source membership checks; ready-post narrowing; controlled result updates and readback verification. The existing Stage 2 preview remains unchanged and is never used as the publication input. Publishing text is plain rich text with fewer than 25 spans; complex/truncation-risk inputs fail closed.
+- Added `notion_synced`, read-only ledger access, and guarded synchronization completion. Threads URLs in saved records are restricted to HTTPS Threads domains. New `syncNotionPublication` has no publish/container dependency: it handles confirmed published results only, recovers a missing URL with an account check, refuses conflicting Notion content/metadata, and retains published state on failure.
+- Added `npm run notion:publish -- --page PAGE_ID [--sync-only]`. Default dry-run reads Notion only; sync-only dry-run additionally reads MongoDB, without index initialization. Live mode requires TTY and separate PREPARE/PUBLISH/PUBLISH/SYNC confirmations. Existing records block fresh publication. Ambiguous or interrupted claims are not automatically resumed, reset, or deleted.
+- Added read-only `npm run publication:status -- --page PAGE_ID` for viewing validated saved states and external IDs without Notion/Threads calls, index initialization, or database writes. It distinguishes a missing record from a read failure and warns that missing history is not publication approval. Already synchronized or ambiguous sync-only attempts stop before any index initialization.
+- No external schema was changed. User must add `Threads Post ID` (Text), `Threads URL` (URL), and `Published At` (Date) to the existing data source before preview; live sync requires Update content capability. These properties are not confirmed present. Use new content, not the earlier isolated test post. Do not edit content/status during a run; the Notion precheck and PATCH are not an atomic compare-and-swap.
+- Added four focused synchronization tests (not executed). No tests, typecheck, builds, lint, formatter, Docker command, Git operation, API request, or external write was performed. Source review only. The previous MongoDB connection success does not validate this workflow. Stage 4 remains open pending manual dry-run/live/recovery verification; automated checks require an explicit request.
+- Next checkpoint: user creates the three properties and runs the documented dry-run for one explicit ready page. Obtain immediate approval before any live publication or Notion write. Remaining interrupted-claim reconciliation is manual; no exactly-once guarantee is claimed. Teaching review remains deferred.
+
+### Earlier Stage 4 checkpoints
+
+Manual MongoDB connectivity confirmed by the user on 2026-10-20:
+
+- User-shared output shows `docker compose up -d mongodb` started the local container and `npm run mongodb:inspect` returned `{ "connected": true, "writes": false }`, then exited to the shell. This verifies the local connection/ping/cleanup success path.
+- No explicit failure-path output was supplied. Index creation, atomic claims, state transitions, persistence across container recreation, and integrated publication remain unverified. No assistant-run checks or external writes were performed for this update.
+- Next implementation remains metadata-aware Notion preflight and controlled result synchronization, followed by integrated CLI wiring. Do not republish the earlier test post or infer complete Stage 4 verification from this connection check.
+
+Stage 4 second implementation slice on 2026-10-20:
+
+- MongoDB 7.7 is now present in the user's package.json; dependency changes were preserved. No installation was performed by the assistant.
+- Added runtime-validated publication states `claimed`, `container_created`, `publish_started`, and `published`. Repository reads strip raw MongoDB fields; guarded updates match page ID, claim ID, and expected state. The container ID is persisted before publication intent, and intent before the Threads publish request. Existing records are never automatically released or reclaimed.
+- Added `publishNotionPost` service: offline dry-run; account/text preview; separate creation/publication confirmations; content hash and account binding; authoritative reload callback before each Threads write stage; atomic claim; bounded readiness polling; persisted success before optional permalink lookup. Ambiguous publication leaves `publish_started`; failed success persistence reports the known post ID and requires reconciliation rather than republishing.
+- This service deliberately has no CLI/live wiring yet. The existing Notion reader returns null metadata placeholders and cannot satisfy its authoritative reload contract. Next: metadata-aware Notion reader/preflight, controlled result updates, and safe synchronization-only recovery/CLI composition. No automatic resume of partial records is implemented.
+- Source review only. No tests, typecheck, builds, linters, formatters, Docker commands, database connections, API requests, or external writes were run. Stage 4 remains incomplete; manual checks remain deferred and automated checks require explicit user request.
+- Learning: briefly explained write-ahead publication intent. Full walkthrough and exercises remain deferred; no mastery inferred.
+
+### Stage 4 infrastructure slice (historical)
+
+Stage 4 first implementation slice on 2026-10-20:
+
+- The user accepted local MongoDB through Docker and requested Stage 4 development. Added `compose.yaml` with the official Community Server 8.0 image, loopback-only port binding, and a named data volume. This is unauthenticated local development infrastructure, not a deployment configuration. Nothing was started or downloaded.
+- Added MongoDB configuration validation, a bounded connection helper with explicit cleanup, and read-only `mongodb:inspect` (ping only, no indexes or records). The HTTP app and existing CLIs remain independent of MongoDB.
+- Added the initial claimed-publication model and repository. Initialization requires dryRun=false and awaits a unique `notionPageId` index. Claims normalize UUID spelling, store content hash/account/claim ID/timestamps, and use one insert rather than read-before-write. Duplicate insertion never grants ownership; uncertain insert outcomes stop without publishing or automatic reclaim. There are no state transitions, deletion, expiry, or recovery commands yet.
+- Dependency installation belongs to the user: run `npm install mongodb@7`. The driver is not yet declared/installed; package.json only gained the inspect script and package-lock.json was not edited. New MongoDB imports cannot resolve until installation. No test, typecheck, build, lint, formatter, manual check, API request, Git command, or database write was run. Source inspection only.
+- Next development slice: persisted state transitions and an integrated publishing service, then controlled Notion metadata synchronization. Keep the publisher disconnected until those safety pieces exist. Existing isolated test posts have no Notion-page ledger entry; do not infer that existing Notion content is unpublished from null placeholders.
+- User setup now: install the driver and add the non-secret MongoDB settings from .env.example to their existing .env without replacing it. Database startup/manual verification is deferred to the milestone's end; automated checks require a fresh explicit request.
+- Learning: briefly introduced atomic insertion, unique indexes, and config/connection/repository responsibilities. Detailed walkthrough and comprehension questions remain deferred at the user's request.
+
+### Stage 3 closure
+
 Stage 3 closed on 2026-10-20 based on user-confirmed publication:
 
 - The user supplied a screenshot of the agreed test text on `vd00m_dev`, dated 2026-10-06, and confirmed receiving the post. This satisfies the isolated publication exit criterion. The earlier assistant report that publication had not completed was based on incomplete execution evidence and is superseded by this confirmation.

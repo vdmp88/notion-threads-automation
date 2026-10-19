@@ -1,0 +1,11 @@
+# Local development only. No authentication: never expose this port publicly.
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:8.0-ubi8-slim
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:

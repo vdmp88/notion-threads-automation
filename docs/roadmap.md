@@ -92,7 +92,7 @@ Exit criterion: one approved test post can be published deliberately, with crede
 
 ### Phase 4 — idempotent publishing workflow
 
-Status: not started.
+Status: complete as an implementation and manual end-to-end milestone on 2026-10-20. The user verified publication, persisted results, Notion updates, and successful synchronization-only recovery after a date-precision fix. Duplicate/concurrent-run rejection and interrupted outcomes have not been exercised; automated checks and Node 24 parity remain deferred, not passing. Interrupted/ambiguous claims require manual reconciliation and cannot automatically republish. Learning review remains separate; Phase 5 has not started.
 
 - confirm the local MongoDB approach before adding the dependency
 - connect using the official MongoDB driver

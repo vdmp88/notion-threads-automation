@@ -2,7 +2,7 @@
 
 A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single Threads account.
 
-> **Current status:** Phases 2 and 3 are complete: read-only Notion access and the isolated Threads adapter. On 2026-10-20 the user confirmed the test post with a screenshot dated 2026-10-06. Historical checks passed 36 tests and typechecking on Node 26.5.0; Node 24 parity and live token refresh remain unverified. The integrated Notion workflow and durable duplicate protection are Phase 4 work.
+> **Current status:** Phases 2–4 are implemented. The user manually verified integrated publication and synchronization-only recovery on 2026-10-20. Stage 4 automated checks, concurrent/duplicate-run scenarios, Node 24 parity, and live token refresh remain unverified. Learning review is pending; scheduled execution has not started.
 
 ## Naming and scope
 
@@ -53,7 +53,7 @@ Required locally:
 - Node.js 24 LTS (`>=24.1.0 <25`)
 - npm 11 or newer
 - Git
-- Docker (installed but not used in the current phase)
+- Docker with Compose for the local Phase 4 MongoDB service
 
 Use a current security-patched Node 24 release. If npm reports `EBADENGINE` while using Node 26, switch the terminal back to Node 24 rather than weakening the project's supported-runtime rule.
 
@@ -61,7 +61,7 @@ External integration setup:
 
 - Phase 2: a Notion internal connection and the Threads Posts database are configured; read access was verified. Update access will be needed later.
 - Phase 3: the user configured app/tester access and manually verified the profile CLI. Isolated publication, status/permalink reads, and long-lived-token refresh are implemented. A real publication still requires explicit approval. Owner-token setup uses Meta's dashboard; a custom multi-user OAuth callback is not required for this path.
-- Phase 4: MongoDB, with the local execution method confirmed before implementation
+- Phase 4: local MongoDB through Docker Compose; connectivity is user-verified. Integrated publication and synchronization are implemented but not yet manually verified.
 - Deployment: a separately approved free or low-cost MongoDB deployment
 
 The user wants a no-paid-service learning path. The reviewed Threads setup documents no subscription or per-post charge; this is not a guarantee of permanent pricing. Ask before introducing any paid service.
@@ -77,6 +77,78 @@ Notion tokens and the Threads credentials required by the selected authenticatio
 `THREADS_ACCESS_TOKEN` is required for profile reads and live test publication, but not for an offline publication dry-run. It is a user access token, not the app secret. The local `.env` is user-managed; never paste tokens into chat.
 
 ## Development commands
+
+### Stage 4 setup (in progress)
+
+Install the official MongoDB driver yourself from the project root:
+
+```bash
+npm install mongodb@7
+```
+
+This updates package.json and package-lock.json. The current package.json already includes MongoDB 7.7; do not repeat installation if your local dependencies are up to date. Keep Node 24 active. Add these settings to your existing private `.env` without replacing its Notion/Threads settings:
+
+```dotenv
+MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_DATABASE=notion_threads_automation
+```
+
+Keep `DRY_RUN=true`. When manual verification is requested at the end of the milestone, start Docker and run:
+
+```bash
+docker compose up -d mongodb
+npm run mongodb:inspect
+```
+
+The first command downloads the image if needed and starts the local database. The inspect command only connects, pings, and closes its connection pool; it does not create indexes, claims, or posts. The user confirmed this connection check on 2026-10-20; it does not verify publication persistence or duplicate protection.
+
+`compose.yaml` binds MongoDB only to `127.0.0.1:27017` and persists data in the `mongodb_data` named volume. Authentication is disabled for this isolated local setup: never expose it publicly or use this configuration for deployment. Local processes can access it. `docker compose stop mongodb` stops the service without deleting data. Do not remove its volume (`down -v`, volume deletion, or pruning): losing the ledger also loses duplicate protection. Moving to Atlas will require transferring publication history, not just changing the URI.
+
+The repository initializes a unique Notion-page index before permitting atomic claims. It persists guarded transitions through `claimed`, `container_created`, `publish_started`, `published`, and `notion_synced`. It rejects dry-run initialization, does not release/reclaim records, and stops on ambiguous database errors. The integrated CLI uses a separate metadata-aware reader; it never publishes from the Stage 2 reader's null placeholders.
+
+### Integrated Notion publication (manually verified happy path and sync recovery)
+
+In the existing Notion data source, the following properties are required in addition to the four editorial properties:
+
+| Exact name | Notion property type |
+| --- | --- |
+| Threads Post ID | Text |
+| Threads URL | URL |
+| Published At | Date |
+
+No external properties have been created by the assistant. Schema preflight only reads and stops if properties are missing or have the wrong type. The Notion connection needs Read content and, for live synchronization, Update content capability. Never clear publication metadata to force another run. Use genuinely new content for a new publication, not the earlier isolated test post.
+
+Preview one explicit page (replace PAGE_ID with its Notion page ID, not its database/data-source ID):
+
+```bash
+DRY_RUN=true npm run notion:publish -- --page PAGE_ID
+```
+
+This reads and validates the configured source schema and page, including real publication metadata and source membership. It validates readiness and text, then prints a preview. It does not connect to MongoDB, call Threads, initialize indexes, or write anywhere. It therefore does not claim that the ledger is clear. Text-only publishing currently rejects mentions/equations and properties with 25 or more rich-text spans rather than risking truncated content. Do not edit a page while a live operation is running: Notion offers no cross-system transaction with Threads or MongoDB.
+
+Only after manual review and explicit approval, live mode uses the same command with `DRY_RUN=false`. It requires a terminal and separate confirmations: `PREPARE` for index initialization, `PUBLISH` before container creation, `PUBLISH` before public publication, and `SYNC` before writing the saved result to Notion. The exact account and text are previewed. MongoDB is closed when the command finishes. Existing ledger entries block new publication even if Notion still says ready.
+
+If Threads succeeded but the link lookup or Notion update failed, preview recovery:
+
+```bash
+DRY_RUN=true npm run notion:publish -- --page PAGE_ID --sync-only
+```
+
+This reads Notion and MongoDB without writes. Live `--sync-only` requires explicit confirmation and can recover the URL, write only Threads Post ID / Threads URL / Published At / Status, verify the result, and mark `notion_synced`. It cannot create or publish a Threads container. Conflicting Notion content/metadata stops synchronization rather than overwriting editorial changes. If the PATCH response was lost, repeating synchronization is safe for matching saved metadata. An already synchronized record is a no-op.
+
+Notion date readback was observed to discard seconds and milliseconds. Synchronization compares Published At using UTC minute buckets, while MongoDB retains the exact timestamp. Different minutes still conflict; this is not a rolling 60-second tolerance.
+
+`claimed`, `container_created`, and `publish_started` records require manual reconciliation; the current CLI never resumes or deletes them. In particular, `publish_started` may already represent a public post. Inspect the saved container/profile and do not retry publication. Loss of the ledger is not recoverable merely by rerunning this command.
+
+Inspect a page's saved state without Notion/Threads requests or database writes:
+
+```bash
+npm run publication:status -- --page PAGE_ID
+```
+
+This needs only MongoDB configuration, reads the validated record, and closes the connection. It does not initialize indexes and works regardless of DRY_RUN. A missing record is not proof that an isolated/manual post was never published. A database error is not treated as a missing record. For a saved container, the existing `threads:status -- --container CONTAINER_ID` performs a separate read-only API check. Do not clear uncertain records to bypass duplicate protection.
+
+### Existing commands
 
 Install dependencies and start the development server:
 
@@ -166,7 +238,7 @@ npm run format:check
 - Phase 1: TypeScript/Fastify foundation and tests — complete
 - Phase 2: read-only Notion schema inspection and mapping — complete
 - Phase 3: Threads authentication and an explicitly approved test post — complete
-- Phase 4: idempotent publishing workflow backed by MongoDB
+- Phase 4: idempotent publishing workflow backed by MongoDB — implemented; manual publication/sync recovery verified
 - Phase 5: safe recurring execution
 - Phase 6: analytics synchronization
 - Phase 7: production reliability
@@ -184,9 +256,9 @@ npm run format:check
 
 ## Current limitations
 
-- The health route and application foundation exist. Isolated text publishing is user-confirmed; integrated Notion publishing is not implemented.
+- Isolated and integrated text publishing, Notion updates, and synchronization-only recovery are user-confirmed. Concurrent and duplicate-run scenarios remain unverified.
 - `GET /posts` returns temporary in-memory learning data and is not a production content source.
-- The read-only Notion schema and Threads profile CLIs have recorded manual verification. MongoDB is not connected.
-- The Notion read/model path has been manually verified. Publication metadata loading and remaining publication eligibility rules are not implemented. See PROJECT_CONTEXT.md for current verification status.
+- The read-only Notion schema, Threads profile, and MongoDB connection CLIs have recorded manual verification. Publication state persisted in MongoDB during the user-run live workflow; interruption/concurrency scenarios remain unverified.
+- The metadata-aware reader uses the three publication properties now configured by the user. The older notion:posts preview still returns null placeholders. See PROJECT_CONTEXT.md for current verification status.
 - Live token refresh and permalink recovery remain unverified. Metrics integration is not implemented.
 - The project is not production-ready.

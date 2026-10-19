@@ -148,10 +148,13 @@ The `publications` collection will contain one document per Notion page. Its pre
 - bounded and sanitized `lastError`
 - `createdAt` and `updatedAt`
 
-The planned state machine is (persist `publish_started` before sending the Threads publish-container request; persist the container ID before that stage):
+The implemented Stage 4 state sequence is below. Persist `publish_started` before sending the Threads publish-container request; persist the container ID before that stage. Each transition matches the claim owner and expected previous state, following [MongoDB's conditional atomic-update guidance](https://www.mongodb.com/docs/manual/core/write-operations-atomicity/).
 
 ```text
 claimed
+   |
+   v
+container_created
    |
    v
 publish_started
@@ -164,6 +167,10 @@ notion_synced
 ```
 
 Terminal or review states such as `validation_failed`, `failed`, and `needs_review` will be defined when their retry rules are implemented.
+
+Current conservative behavior: every existing record blocks a fresh publication. Interrupted or cancelled claims are retained, including before publication; no automatic resume/reclaim exists yet. `publish_started` means publication may have happened and must never trigger automatic resend. A confirmed Threads post ID is reported before persistence; if persistence fails, recovery must reconcile that ID with the saved intent. The integrated CLI uses a separate metadata-aware Notion reader. `--sync-only` handles confirmed `published` results without any Threads publication path, then marks `notion_synced` after readback verification.
+
+The write adapter changes only the three publication properties and Status through [Notion's page-update endpoint](https://developers.notion.com/reference/patch-page). It rejects content hashes or existing metadata that conflict with the saved result. This precheck is not atomic with Notion's PATCH; users must not edit the page during a run. An ambiguous PATCH can be retried only as synchronization of the same saved result, never as another Threads publication. External schema changes remain user-controlled.
 
 ## Idempotency and failure policy
 
@@ -216,7 +223,7 @@ A queue is postponed. It adds infrastructure while not eliminating the ambiguous
 
 - Node.js 24 and npm
 - Fastify on loopback by default
-- MongoDB starting in Phase 4; Docker versus a managed free cluster will be reconfirmed first
+- Local MongoDB Community Server 8.0 through Docker Compose, selected on 2026-10-20; loopback-only port and persistent named volume. No authentication in this local-only setup; do not expose or deploy it. Node.js continues running directly on the host.
 - `.env` for local secrets
 - manual CLI execution
 
