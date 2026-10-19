@@ -6,7 +6,7 @@ interface Post {
   topic: string;
   status: 'draft' | 'ready' | 'published';
   publishedAt?: string;
-  xUrl?: string;
+  threadsUrl?: string;
 }
 
 interface PostsResponse {
@@ -23,7 +23,7 @@ export async function registerPostsRoute(app: FastifyInstance): Promise<void> {
           topic: 'general',
           status: 'published',
           publishedAt: new Date().toISOString(),
-          xUrl: 'https://example.com/threads/1',
+          threadsUrl: 'https://example.com/threads/1',
         },
         {
           id: 2,

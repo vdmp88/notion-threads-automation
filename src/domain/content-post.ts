@@ -6,8 +6,8 @@ export interface ContentPost {
   text: string;
   topic: string | null;
   status: PostStatus;
-  xPostId: string | null;
-  xUrl: string | null;
+  threadsPostId: string | null;
+  threadsUrl: string | null;
   publishedAt: Date | null;
 }
 

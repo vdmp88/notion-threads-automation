@@ -1,6 +1,6 @@
 # Roadmap
 
-Last reviewed: 2026-10-05
+Last reviewed: 2026-10-20
 
 This roadmap separates the short learning exercises from the production MVP. A learning exercise may introduce a concept without becoming part of the final architecture.
 
@@ -10,7 +10,7 @@ The active product target is **Notion → Threads**, restored by the user on 202
 
 Purpose: learn to independently build backend logic for web applications. The user clarified this goal on 2026-09-10, with shops, blogs, learning apps, and simple AI agents as examples. For now the assistant implements the project code, explains each new mechanism, and then offers small optional exercises.
 
-Immediate priority: begin Phase 3 with Threads app/tester setup and an explanation of authorization/token handling. Continue explaining adapter/domain boundaries and dependency passing through concrete backend work; these remain learning topics, not implementation blockers. Ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
+Immediate priority: Stage 3 is complete; prepare Phase 4 local persistence. The user explicitly requested development focus and deferred the walkthrough and questions. Adapter/domain boundaries, authorization/token handling, and dependency passing remain learning topics, not implementation blockers. Later, ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
 
 Existing HTTP exercises:
 
@@ -77,13 +77,13 @@ Approved scope clarification: controlled Notion-property updates move to Phase 4
 
 ### Phase 3 — Threads adapter
 
-Status: official Threads setup, permissions, tokens, publishing, and limits reviewed on 2026-10-05. The user approved returning to Threads, not account changes or real publication. No app/tester account or token is configured; no publisher is implemented. Sources and learning status are recorded in PROJECT_CONTEXT.md.
+Status: complete for the single-owner isolated adapter. On 2026-10-20 the user confirmed the approved test post with a screenshot dated 2026-10-06, satisfying the exit criterion. Profile reading is also manually verified. Unicode preflight, container-status/permalink reads, and manual long-lived-token refresh are implemented; live refresh and permalink recovery remain unverified. Historical check results and outstanding learning topics are recorded separately in PROJECT_CONTEXT.md. No checks were rerun for closure.
 
 - explain the app identity, user authorization, permissions, and token lifecycle before implementation
-- rename legacy `xPostId` / `xUrl` placeholders to `threadsPostId` / `threadsUrl` in a separate focused code step
+- completed 2026-10-06: rename legacy publication placeholders to `threadsPostId` / `threadsUrl`
 - guide single-owner Meta app and Threads Tester setup; use `threads_basic` and `threads_content_publish`
-- implement server-side token handling, including expiry and supported refresh; do not copy the abandoned X PKCE flow
-- validate Threads text/counting rules and API responses; the documented ordinary text limit is 500 characters, but Unicode/emoji counting needs focused verification before coding
+- use the single-owner dashboard-generated long-lived token with server-side refresh and saved expiry; a custom OAuth callback is not needed for this chosen flow
+- validate text and API responses; local Unicode preflight follows the documented emoji byte weighting conservatively, while Meta remains authoritative for exact counting and link rules
 - implement container creation followed by publication using native `fetch`
 - normalize and sanitize API errors; do not retry ambiguous publication automatically
 - publish one isolated test post only with `DRY_RUN=false` and explicit confirmation immediately before the action; this is not the automated Notion publishing workflow

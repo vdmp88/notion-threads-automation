@@ -11,7 +11,7 @@ After a meaningful milestone, update `PROJECT_CONTEXT.md` so a new chat can cont
 
 ## Product direction
 
-The target is Notion → Threads, as confirmed by the user on 2026-10-05 after declining paid X API usage. X is no longer a target. Existing code still has legacy X-named publication placeholders; see PROJECT_CONTEXT.md and ADR 005 for the migration boundary.
+The target is Notion → Threads, as confirmed by the user on 2026-10-05 after declining paid X API usage. X is no longer a target. See PROJECT_CONTEXT.md and ADR 005 for the implementation boundary.
 
 Build an understandable, production-minded Node.js application for this flow:
 

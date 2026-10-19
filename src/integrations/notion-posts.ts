@@ -43,8 +43,8 @@ function mapReadyPost(page: PageObjectResponse): ReadyContentPost {
     topic: topic.select?.name ?? null,
     status: 'ready',
     // Publication metadata is not loaded yet; null is not proof of no prior publication.
-    xPostId: null,
-    xUrl: null,
+    threadsPostId: null,
+    threadsUrl: null,
     publishedAt: null,
   };
 }

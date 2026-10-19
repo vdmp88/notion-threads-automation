@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 
 import * as notion from '../src/integrations/notion.js';
-import { NotionPostDataError, readReadyNotionPosts } from '../src/integrations/notion-posts.js';
+import { readReadyNotionPosts } from '../src/integrations/notion-posts.js';
 
 type QueryResponse = Awaited<ReturnType<Client['dataSources']['query']>>;
 
@@ -121,8 +121,8 @@ describe('Notion to ContentPost mapping', () => {
         text: 'Hello!',
         topic: 'general',
         status: 'ready',
-        xPostId: null,
-        xUrl: null,
+        threadsPostId: null,
+        threadsUrl: null,
         publishedAt: null,
       },
     ]);

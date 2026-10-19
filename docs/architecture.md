@@ -2,7 +2,7 @@
 
 Status: MVP design recorded on 2026-07-28; publishing target restored to Threads on 2026-10-05. See [ADR 005](decisions/005-return-to-threads.md).
 
-The product has one target, Threads. Current Notion reading and validation remain in scope. This is a design update only: legacy X-named fields in application code have not been renamed. Account-specific Threads access and authentication are not configured.
+The product has one target, Threads. Current Notion reading and validation remain in scope. Legacy publication fields were renamed to Threads names locally on 2026-10-06; external resources are unchanged. Single-owner token-based profile reading is verified; isolated publication was confirmed by the user on 2026-10-20. Live refresh remains unverified. Integrated Notion publication still requires the Phase 4 ledger.
 
 ## Goals
 
@@ -95,7 +95,7 @@ Uses the official MongoDB Node.js driver. It creates unique indexes, atomically 
 
 ## Internal domain model
 
-The current shared internal model is defined in `src/domain/content-post.ts`. Its legacy X-named placeholders are shown accurately below; a separate Phase 3 code step will rename them to `threadsPostId` and `threadsUrl`. This documentation change does not change CLI output:
+The current shared internal model is defined in `src/domain/content-post.ts`. Its publication placeholders were renamed on 2026-10-06; CLI output now uses the same Threads field names:
 
 ```ts
 type PostStatus = 'draft' | 'ready' | 'published';
@@ -106,8 +106,8 @@ interface ContentPost {
   text: string;
   topic: string | null;
   status: PostStatus;
-  xPostId: string | null;
-  xUrl: string | null;
+  threadsPostId: string | null;
+  threadsUrl: string | null;
   publishedAt: Date | null;
 }
 ```
@@ -131,7 +131,7 @@ The existing database is still titled `Threads Posts`. Its four current fields h
 | `Last Error`   | Text                  | Proposed; bounded, sanitized error                  |
 | `Retry Count`  | Number                | Proposed; safe retry attempts                       |
 
-Analytics fields and `Metrics Updated At` are postponed to Phase 6; select only metrics actually available with the user's Threads access. Do not assume metric names, permissions, or availability carry over from the old target. `Scheduled At` is postponed until scheduling is designed. The CLI now returns `ReadyContentPost` (ContentPost with status narrowed to ready). The four editorial properties are mapped, while `xPostId`, `xUrl`, and `publishedAt` are reserved null values: publication metadata is not loaded yet, even if similarly named extra Notion columns exist. Null must not be treated as evidence of no earlier publication. Publication metadata integration and the MongoDB duplicate check remain prerequisites before enabling a publisher. The user shared a passing full-suite run (56 tests, including all 29 mapping/query cases). The user verified the new output against the real Notion table: count 1, the original First text post, and null xPostId, xUrl, and publishedAt.
+Analytics fields and `Metrics Updated At` are postponed to Phase 6; select only metrics actually available with the user's Threads access. Do not assume metric names, permissions, or availability carry over from the old target. `Scheduled At` is postponed until scheduling is designed. The CLI now returns `ReadyContentPost` (ContentPost with status narrowed to ready). The four editorial properties are mapped, while `threadsPostId`, `threadsUrl`, and `publishedAt` are reserved null values: publication metadata is not loaded yet, even if similarly named extra Notion columns exist. Null must not be treated as evidence of no earlier publication. Publication metadata integration and the MongoDB duplicate check remain prerequisites before enabling a publisher. The user shared a passing full-suite run (56 tests, including all 29 mapping/query cases). Before the rename, the user verified output against the real Notion table: count 1, the original First text post, and null xPostId, xUrl, and publishedAt.
 
 ## Publication ledger
 
@@ -194,8 +194,9 @@ This is a single-user integration.
 - Secrets are never included in structured log fields or user-facing errors.
 - Phase 3 uses Threads user authorization with `threads_basic` and `threads_content_publish`; app credentials alone are not the publishing identity.
 - Start with the owner's Threads Tester role and accepted invitation. Supporting users without an app role requires App Review and a published app.
-- Use the Threads app ID/secret, exact registered redirect URI, and state validation for the authorization flow. Do not carry over X PKCE assumptions without Threads documentation support.
-- Short-lived user tokens last one hour; long-lived tokens last 60 days. Implement supported exchange/refresh and permission-expiry handling; secrets stay server-side. [Threads setup and tokens](https://developers.facebook.com/documentation/threads/get-started).
+- Stage 3 uses the dashboard-generated long-lived owner token. A custom OAuth callback is not necessary for this selected single-owner flow. If added later, use the Threads app identity, exact registered redirect URI, and state validation; do not copy X PKCE assumptions.
+- Manual refresh is implemented through `threads:refresh`, gated by DRY_RUN=false and interactive confirmation. The returned token and expiry go to an exclusive 0600 `.env.threads-refreshed` file, never the console. The user transfers the value into `.env`; neither publishing nor profile reads silently refresh credentials.
+- Refresh requires an unexpired long-lived token at least 24 hours old. Honor returned expiry; expired/revoked tokens require fresh authorization. Permission grants are separate and may require renewed consent. [Threads token lifecycle](https://developers.facebook.com/documentation/threads/get-started/long-lived-tokens).
 
 ## Execution model
 
@@ -234,14 +235,14 @@ No deployment provider or paid infrastructure has been selected.
 
 Notion application code uses API version `2026-03-11` and the official SDK 5.x. The user successfully ran the schema and ready-post commands against their existing data source. See PROJECT_CONTEXT.md for exact verification dates and remaining checks.
 
-Threads documentation reviewed in the browser on 2026-10-05:
+Threads documentation reviewed in the browser on 2026-10-05 and 2026-10-06:
 
 - [Get started](https://developers.facebook.com/documentation/threads/get-started): app/tester setup, permissions, user tokens, exchange and refresh.
-- [Posts](https://developers.facebook.com/documentation/threads/posts): container creation followed by publication; ordinary text posts have a 500-character limit. Verify Unicode/emoji counting before implementing text validation; only the generic nonempty-text rule exists today.
+- [Posts](https://developers.facebook.com/documentation/threads/posts): two-step publication, a 500-character limit with emoji UTF-8 byte weighting, and a five-unique-link limit. Local validation counts non-emoji code points and weights emoji clusters by bytes. It is a conservative preflight, not exact parity with Meta's private counter; server-side rejection remains authoritative. The original Notion nonempty-text rule is unchanged.
 - [Overview](https://developers.facebook.com/documentation/threads/overview): 250 API-published posts per profile in a rolling 24-hour window, plus other request limits.
 - No required subscription or per-post billing step appears in the reviewed setup. This supports the selected no-paid-API path, not a guarantee of permanent free pricing.
 
-These are design references, not evidence that Threads is connected. No user credentials, API access, or publication have been verified. Analytics permissions and supported metrics remain Phase 6 work.
+Profile read access was manually verified. Publication and refresh implementations have mocked checks but have not been exercised against Meta. The isolated publisher is not the production ledger-backed workflow; it has no cross-run duplicate protection. Analytics permissions and supported metrics remain Phase 6 work.
 
 ## Decisions
 

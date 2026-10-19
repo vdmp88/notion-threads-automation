@@ -1,6 +1,6 @@
 # Project context
 
-Last context update: 2026-10-05. Verification dates for code and checks are recorded below.
+Last context update: 2026-10-20. Verification dates for code and checks are recorded below.
 
 ## Purpose
 
@@ -20,18 +20,21 @@ Confirmed with the user on 2026-09-07:
 
 Decision on 2026-10-05: return to **Notion → Threads** after the user declined paid X API usage. X is no longer in scope; [ADR 005](docs/decisions/005-return-to-threads.md) supersedes ADR 004. Do not introduce a multi-platform abstraction.
 
-This is a documentation/plan change, not a code or external-resource migration:
+The target decision was documentation-only; the local field rename was implemented on 2026-10-06. External resources are unchanged:
 
 - Keep the folder/npm package and Notion connection `notion-threads-automation`, database `Threads Posts`, existing database/data-source IDs, and token.
-- Current `ContentPost`, mapper, tests, and CLI output still use `xPostId` and `xUrl` as null placeholders. Rename them to `threadsPostId` and `threadsUrl` in a separate explained Phase 3 code step. Do not claim this migration is implemented.
+- Current `ContentPost`, mapper, tests, and CLI output use `threadsPostId` and `threadsUrl` as null placeholders. The mock posts route also uses `threadsUrl`. This rename has source review only, not new runtime verification.
 - Planned Notion properties are `Threads Post ID` and `Threads URL`; publication properties have not been added to the four-column database.
 - The temporary `GET /posts` is still mock data, not a publishing integration.
 - Threads/Meta placeholders were previously removed from `.env.example`. Define the required settings during authentication implementation; neither the template nor the local `.env` changed in this documentation step.
 
-Phase 2 remains complete as a read-only Notion adapter. No Threads developer app, tester access, token, or publication has been configured or verified for the user. Do not transfer X-specific endpoints, PKCE assumptions, or text-counting rules to Threads.
+Phase 2 remains complete as a read-only Notion adapter. On 2026-10-06 the user confirmed app/tester setup, storing a replacement user token, and a successful Threads profile CLI run. On 2026-10-20 the user confirmed the test publication with a screenshot dated 2026-10-06. Stage 3 is complete for the isolated single-owner adapter; live token refresh remains unverified. Do not transfer X-specific endpoints, PKCE assumptions, or text-counting rules to Threads.
 
 ## User and working style
 
+- Latest preference, 2026-10-20: focus on development, defer manual testing to the end of the next implementation milestone, and run automated checks only when explicitly requested again. Do not reuse the earlier end-of-Stage-3 check authorization. Defer the learning walkthrough and questions; do not treat this as demonstrated understanding.
+- Testing preference, 2026-10-06: prioritize implementation; defer automated checks to one end-of-Stage-3 batch with permission. Do not expand tests merely for coverage or repeatedly request interim runs. Preserve runtime safety guards.
+- Latest preference, 2026-10-06: focus on development through the rest of Stage 3. Defer comprehension questions/exercises until Stage 3 ends. Later questions should address backend mechanisms (request lifecycle, authorization, persistence, concurrency, recovery), not return values or obvious mapping. The user correctly identified the profile mapping but found that question trivial.
 - The user is a React/Next.js frontend developer learning Node.js and backend development. On 2026-09-10, they clarified the long-term goal: become a full-stack developer able to independently build backend logic for shops, blogs, learning apps, and simple AI agents.
 - The assistant implements all project code for now. The user wants to understand the mechanisms well enough to implement a second project independently.
 - Explain new mechanisms in detail, concretely and in plain Russian. Reduce repetition and administrative overhead, not the explanation needed for understanding.
@@ -110,7 +113,7 @@ Outside the MVP: AI generation, automatic AI publication, Notion webhooks, sched
 - If Threads may have published but the outcome is ambiguous, never automatically publish again.
 - If Threads succeeds and the Notion update fails, retain the Threads result and retry only the Notion update.
 
-## Current domain model (legacy names; migration pending)
+## Current domain model
 
 ```ts
 type PostStatus = 'draft' | 'ready' | 'published';
@@ -121,8 +124,8 @@ interface ContentPost {
   text: string;
   topic: string | null;
   status: PostStatus;
-  xPostId: string | null;
-  xUrl: string | null;
+  threadsPostId: string | null;
+  threadsUrl: string | null;
   publishedAt: Date | null;
 }
 ```
@@ -152,8 +155,8 @@ Not implemented:
 - persistent Posts API
 - MongoDB connection and publication repository
 - publication metadata loading and remaining publication eligibility validation (ContentPost editorial mapping now exists; see the latest checkpoint for unrun changes)
-- Threads authentication or publishing
-- publishing service and idempotency state machine
+- custom Threads OAuth callback/short-token exchange (not required for the selected dashboard-owner-token path); refresh is implemented but live-unverified, while isolated publishing is user-confirmed
+- ledger-backed Notion publishing service and idempotency state machine
 - analytics, scheduling, AI, or deployment
 
 Environment placeholders for future integrations already exist in `.env.example`; a placeholder does not mean its integration is implemented.
@@ -172,6 +175,65 @@ Environment placeholders for future integrations already exist in `.env.example`
 Do not assume every concept is fully mastered. Briefly reconnect new code to these ideas when relevant.
 
 ## Current checkpoint
+
+Stage 3 closed on 2026-10-20 based on user-confirmed publication:
+
+- The user supplied a screenshot of the agreed test text on `vd00m_dev`, dated 2026-10-06, and confirmed receiving the post. This satisfies the isolated publication exit criterion. The earlier assistant report that publication had not completed was based on incomplete execution evidence and is superseded by this confirmation.
+- No new publication, API request, test, typecheck, build, lint, formatter, dependency install, or Git operation was performed for closure. No post ID or permalink was supplied; do not invent them or republish to recover them.
+- Live refresh, permalink recovery, and Node 24 runtime parity remain unverified. These limitations are retained rather than presented as passing checks. Historical automated-check results below are unchanged.
+- Learning: the Stage 3 runtime walkthrough, adapter/domain boundaries, authorization lifecycle, and recovery mechanisms still need review. The user explicitly chose development first, with no questions now.
+- Next: begin Phase 4 with agreement on the local MongoDB execution method, then connection/configuration and a publication repository with a unique Notion-page key and atomic claims. Local Docker is the proposed option, not yet selected or started. The user installs dependencies. Do not connect Notion to live publication before durable duplicate protection exists.
+- Manual verification is deferred until the next milestone; automated checks require a fresh explicit request. Keep DRY_RUN=true and obtain immediate explicit permission for each external write.
+
+### Stage 3 implementation verification (historical)
+
+Stage 3 implementation ready for approved live verification on 2026-10-06:
+
+- Added `src/domain/threads-text.ts`: nonempty/well-formed Unicode validation, ordinary code-point counting, and UTF-8 weighting of emoji clusters. Replaces the temporary all-text byte cap. This is a conservative approximation of the documented rules, not proof of exact equivalence to Meta; link-count enforcement remains with Meta before publication.
+- Added permalink retrieval after publication. Success/post ID is reported before the lookup so URL failure cannot hide success or trigger republication. Added `threads:status -- --container ID` / `--post ID` for read-only reconciliation. Readiness polling is bounded to 12 reads, five seconds apart, with per-request timeouts; no automatic writes are retried.
+- Added long-lived-token refresh adapter and `threads:refresh`. Default dry-run performs no requests or file writes. Live mode requires interactive REFRESH confirmation, reserves a new private `.env.threads-refreshed` file (0600, exclusive creation), then saves returned token and expiry without logging them. The user copies the new value into `.env`; no secret file was actually read or written during development. Failure may leave the reserved output file empty; inspect privately before retrying. Meta requires tokens to be at least 24 hours old and unexpired.
+- The selected Stage 3 auth path is the already configured single-owner dashboard token plus manual refresh. Custom OAuth callback and short-token exchange are not prerequisites for this path. No app secret is needed by the implemented commands.
+- Verification: user explicitly approved the final batch. `npm test` passed all 36 tests in 7 files. Initial typecheck found an unused `NotionPostDataError` import in the existing Notion test; removed only that unused import and reran typecheck successfully. Tests were not rerun after this import-only fix. Runtime: Node v26.5.0; Node 24 was not found at common Homebrew/nvm locations, and runtime parity is not claimed. No build/lint/formatter, dependency install, Git command, real publication, token refresh, or other external write was performed.
+- Learning: questions remain deferred until Stage 3 ends. No new comprehension or mastery inferred from passing checks.
+- Remaining exit criterion: one explicitly approved real test post. Ask approval for the exact text/account immediately before execution. Proposed account: vd00m_dev; proposed text: `Тестовая публикация из моего учебного Node.js-приложения. Notion → Threads.` Nothing is approved yet. Keep Stage 3 open until publication succeeds; do not start Phase 4 or silently publish.
+
+### Earlier Stage 3 implementation notes (historical)
+
+Isolated Threads test publication implemented on 2026-10-06 (not run):
+
+- Added `src/integrations/threads-publishing.ts`, `src/services/publish-threads-test.ts`, `src/cli/publish-threads-test.ts`, and `threads:publish-test`. No Notion/MongoDB integration or external writes were performed.
+- Offline dry-run is the default and does not need a token or network. Live mode requires DRY_RUN=false and a TTY, previews the profile/text, confirms container creation, explicitly sets auto_publish_text=false, polls FINISHED status, then confirms publication separately. POSTs are never retried; uncertain publication outcomes require manual reconciliation. Container/post IDs are printed; no durable ledger or cross-run duplicate protection is claimed.
+- Temporary text validation is nonempty text plus a conservative 500 UTF-8 byte cap, not exact Meta Unicode counting. This accepts short Unicode examples but may reject otherwise valid longer posts. Exact counting, permalink retrieval, refresh, and custom OAuth remain pending.
+- Official Meta Postman text-container and status references were reviewed. No tests were added or run, and no builds/typechecks/linters/formatters, app commands, Git commands, dependency installs, or live API calls were performed. Source review only.
+- Next: finish Stage 3 gaps and batch checks at its end. A real test post still requires immediate explicit approval of account/text; the target-switch and implementation requests do not authorize publication. Teaching questions stay deferred until Stage 3 ends.
+
+Threads naming cleanup on 2026-10-06:
+
+- Renamed `xPostId` / `xUrl` to `threadsPostId` / `threadsUrl` in ContentPost, the Notion mapper, mapping-test expectations, and the mock posts route. Publication values remain null; this does not read or write publication metadata.
+- No external schema, secret, dependency, or persisted data changed. Source inspection only; tests, typechecks, builds, formatters, live reads, and Git commands were not run. Historical verification output below retains the old names.
+- Next development step: implement the isolated Threads text-publication path with dry-run and explicit confirmation guards, following documented container readiness and ambiguous-outcome rules. Do not connect automatic Notion publishing before Phase 4. No real publication is authorized. Defer teaching questions until Stage 3 is complete, as requested.
+
+Threads profile read verified from user-shared output on 2026-10-06:
+
+- `npm run threads:inspect` returned `{ userId: "29195458563371287", username: "vd00m_dev" }`. This confirms the local configuration, authenticated request, response validation/mapping, and CLI success path against Meta. It does not verify publishing permissions, token refresh, failure paths, automated tests, typechecking, or Node 24 runtime parity.
+- No assistant-run API calls or Git operations. The user also shared successful push output; no repository operation is delegated by that output.
+- Next: reinforce the adapter boundary using the actual profile mapping, then continue with the small legacy publication-field rename before publishing work. The user's successful execution is not evidence of architectural mastery. Keep DRY_RUN=true.
+
+Threads profile read implementation on 2026-10-06:
+
+- User setup: the tester profile appeared in the dashboard generator. The user generated a token, then confirmed revoking the exposed token and storing its replacement as `THREADS_ACCESS_TOKEN` locally. Do not reuse chat credentials or print/read `.env` contents for inspection.
+- Added `src/config/threads.ts`, `src/integrations/threads.ts`, `src/cli/inspect-threads.ts`, and `npm run threads:inspect`. The parser validates the local token; the adapter performs one Bearer-authenticated GET to `/v1.0/me?fields=id,username`, validates the response, and maps it to `{ userId, username }`. A 15-second timeout, rejected redirects, no automatic retries, and sanitized errors protect this read-only boundary.
+- Updated `.env.example` with the token variable and Threads naming. The private `.env` was not read or changed. Added six focused mocked tests; no dependencies installed, Git operations, tests, typechecks, builds, linters, formatters, or live API calls run. Source review only; all new runtime behavior remains unverified.
+- Learning: explain the CLI/config/adapter data flow, Node's native fetch, Bearer headers, HTTP failure handling, and external-response mapping. User demonstrated the per-user token distinction; understanding of this implementation is not yet confirmed.
+- Next: user can run `npm run threads:inspect` and report the profile or sanitized error. Successful reading does not verify publishing permission. Keep DRY_RUN=true; publishing, refresh, and custom OAuth remain unimplemented. Legacy publication-field renaming remains a separate step.
+
+Phase 3 introductory lesson on 2026-10-06:
+
+- Introduced Meta app registration versus the Threads user profile, app ID/secret versus user access token, and permission scopes. Connected these concepts to future server-side API requests; no authentication code is implemented yet.
+- The user correctly explained that another Threads user needs their own token to publish to their own account. This demonstrates the user-token/account distinction, not mastery of the full authorization flow.
+- The user confirmed app creation and supplied the Threads use-case settings screen with deliberately substituted credentials. Do not copy screenshot credentials. The screen includes a tester token generator restricted to public Threads profiles.
+- Next: check basic/publishing permissions, add the owner's profile as a Threads Tester, accept its invitation, then return to the token generator. Leave callback fields unchanged for now; a custom OAuth callback is a separate implementation step. Tester setup and token generation are not yet confirmed.
+- No application code, environment settings, external state, or verification results changed.
 
 Return to Threads approved on 2026-10-05:
 
