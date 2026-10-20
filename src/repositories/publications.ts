@@ -17,6 +17,18 @@ export type ClaimResult =
   | { claimed: true; publication: ClaimedPublication }
   | { claimed: false; reason: 'already_claimed' };
 
+// Includes published pages even when Notion already says published after a lost
+// PATCH/readback response. Read-only: no index initialization or ledger writes.
+export async function listPendingSynchronizationIds(db: Db): Promise<string[]> {
+  try {
+    const records = await db.collection<Publication>('publications')
+      .find({ state: 'published' }).sort({ createdAt: 1 }).limit(10).toArray();
+    return records.map((record) => publicationSchema.parse(record).notionPageId);
+  } catch {
+    throw new PublicationRepositoryError('Could not read pending synchronization records.');
+  }
+}
+
 // Does not initialize indexes or create records; safe for diagnostics and dry-run.
 export async function readPublication(db: Db, notionPageId: string): Promise<Publication | null> {
   const id = notionPageIdSchema.safeParse(notionPageId);

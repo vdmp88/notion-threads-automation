@@ -23,6 +23,7 @@ Optional AI work begins only after the core publishing workflow is stable. AI ou
 
 - Keep `DRY_RUN=true` as the default.
 - Never publish a real Threads post or perform another external write without the user's explicit confirmation immediately before the action.
+- Exception approved on 2026-10-20: the Stage 5 automatic job may publish human-approved `ready` posts and synchronize saved publication results without interactive prompts when both `AUTO_PUBLISH_ENABLED=true` and `DRY_RUN=false`. Implementing the job does not authorize the assistant to activate a schedule or run it live. Other external writes and the manual CLIs retain immediate confirmation.
 - Never expose or log tokens, credentials, `.env` contents, or other secrets.
 - Prefer free tiers and open-source solutions. Ask before introducing a paid service.
 - Do not deploy publicly, alter external schemas, or make destructive changes without explicit approval.

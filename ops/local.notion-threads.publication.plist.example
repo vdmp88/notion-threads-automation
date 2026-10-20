@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.notion-threads.publication</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/ABSOLUTE/PATH/TO/NODE24/bin/node</string>
+    <string>/ABSOLUTE/PROJECT/PATH/dist/cli/run-publication-job.js</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/ABSOLUTE/PROJECT/PATH</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DRY_RUN</key>
+    <string>true</string>
+    <key>AUTO_PUBLISH_ENABLED</key>
+    <string>false</string>
+  </dict>
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ExitTimeOut</key>
+  <integer>120</integer>
+  <key>StandardOutPath</key>
+  <string>/ABSOLUTE/PROJECT/PATH/.data/publication-job.log</string>
+  <key>StandardErrorPath</key>
+  <string>/ABSOLUTE/PROJECT/PATH/.data/publication-job-error.log</string>
+</dict>
+</plist>

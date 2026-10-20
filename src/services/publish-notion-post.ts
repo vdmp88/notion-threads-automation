@@ -23,6 +23,8 @@ export async function publishNotionPost(input: {
   reloadPost: () => Promise<ReadyContentPost>;
   confirm: (message: string) => Promise<boolean>;
   report: (message: string) => void;
+  signal?: AbortSignal;
+  onPublished?: (result: { threadsPostId: string; containerId: string }) => void;
 }, dependencies = {
   readThreadsProfile, createTextContainer, readContainerStatus, publishContainer,
   readPostPermalink, delay,
@@ -40,6 +42,7 @@ export async function publishNotionPost(input: {
   const contentHash = createHash('sha256').update(post.text, 'utf8').digest('hex');
   input.report(JSON.stringify({ notionPageId: pageId.data, text: post.text, countedLength, dryRun: input.dryRun }, null, 2));
   if (input.dryRun) return; // No profile, repository, reload, or write calls.
+  input.signal?.throwIfAborted();
 
   const { config, repository } = input;
   if (!config || !repository) throw new NotionPublicationError('Threads configuration and publication repository are required.');
@@ -61,6 +64,7 @@ export async function publishNotionPost(input: {
     }
   }
   await assertUnchanged();
+  input.signal?.throwIfAborted();
   const claim = await repository.claim({ notionPageId: pageId.data, contentHash, threadsUserId: profile.userId });
   if (!claim.claimed) {
     input.report('Another run already claimed this page. No Threads write sent.');
@@ -68,11 +72,13 @@ export async function publishNotionPost(input: {
   }
 
   // Never release claims on exceptions: a remote write may already have succeeded.
+  input.signal?.throwIfAborted();
   const containerId = await dependencies.createTextContainer(config, post.text);
   input.report(`Container created: ${containerId}. Not published yet.`);
   let publication = await repository.recordContainer(claim.publication, containerId);
   let ready = false;
   for (let attempt = 0; attempt < 12; attempt += 1) {
+    input.signal?.throwIfAborted();
     const status = await dependencies.readContainerStatus(config, containerId);
     if (status === 'FINISHED') { ready = true; break; }
     if (status !== 'IN_PROGRESS') {
@@ -83,10 +89,13 @@ export async function publishNotionPost(input: {
   if (!ready) throw new NotionPublicationError('Container readiness timed out. Claim retained; no automatic retry.');
   if (!(await input.confirm(`Publish container ${containerId} publicly to ${profile.username} now?`))) return;
   await assertUnchanged();
+  input.signal?.throwIfAborted();
 
   // Persist intent FIRST. Any crash or ambiguous response leaves a blocked record.
   publication = await repository.startPublishing(publication);
+  input.signal?.throwIfAborted();
   const postId = await dependencies.publishContainer(config, containerId);
+  input.onPublished?.({ threadsPostId: postId, containerId });
   input.report(JSON.stringify({ published: true, threadsPostId: postId, containerId }, null, 2));
   try {
     publication = await repository.recordPublished(publication, postId);

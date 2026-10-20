@@ -18,6 +18,7 @@ export async function syncNotionPublication(input: {
   writeResult: (result: PublishedPublication) => Promise<void>;
   confirm: (message: string) => Promise<boolean>;
   report: (message: string) => void;
+  signal?: AbortSignal;
 }, dependencies = { readThreadsProfile, readPostPermalink }): Promise<void> {
   let publication = input.publication;
   if (publication.state === 'notion_synced') {
@@ -33,6 +34,7 @@ export async function syncNotionPublication(input: {
     publishedAt: publication.publishedAt, dryRun: input.dryRun,
   }, null, 2));
   if (input.dryRun) return;
+  input.signal?.throwIfAborted();
   const repository = input.repository;
   if (!repository) throw new NotionSyncError('Publication repository is required.');
   if (!(await input.confirm('Save this existing Threads result to Notion? This will not publish another post.'))) return;
@@ -55,6 +57,7 @@ export async function syncNotionPublication(input: {
     publication = saved;
   }
   assertNotionSyncCompatible(await input.readPost(), publication);
+  input.signal?.throwIfAborted();
   try {
     await input.writeResult(publication);
     await repository.markNotionSynced(publication);

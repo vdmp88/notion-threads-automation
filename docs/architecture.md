@@ -215,6 +215,10 @@ The repository is one codebase with multiple entry points:
 
 For the MVP, jobs run manually. In production, an external scheduler should invoke the finite command. An in-process `setInterval` is not reliable across restarts, deployments, or multiple replicas.
 
+Stage 5 now implements `publication:run` as a finite automatic entry point. Human-set ready status is approval only when both automatic opt-in and live mode are enabled; manual commands retain interactive confirmation (ADR 006). The job considers at most ten candidates, prioritizing persisted published results for synchronization, and does not retry a failed request within the run. The metadata-aware reader and existing publication/synchronization services remain the business path.
+
+A local directory lock prevents job overlap within one checkout; MongoDB unique claims remain the cross-process publication guard. SIGINT/SIGTERM request a cooperative stop: finish and persist in-flight results, then do not start another side effect. Hard interruption retains both the publication history and potentially a stale local lock for inspection. No automatic claim reclaim exists. The inactive macOS template and operational limitations are documented in [recurring execution](recurring-execution.md).
+
 A queue is postponed. It adds infrastructure while not eliminating the ambiguous external side effect between Threads and MongoDB.
 
 ## Local and production environments

@@ -10,7 +10,7 @@ The active product target is **Notion → Threads**, restored by the user on 202
 
 Purpose: learn to independently build backend logic for web applications. The user clarified this goal on 2026-09-10, with shops, blogs, learning apps, and simple AI agents as examples. For now the assistant implements the project code, explains each new mechanism, and then offers small optional exercises.
 
-Immediate priority: Stage 3 is complete; prepare Phase 4 local persistence. The user explicitly requested development focus and deferred the walkthrough and questions. Adapter/domain boundaries, authorization/token handling, and dependency passing remain learning topics, not implementation blockers. Later, ask about architectural reasoning rather than obvious console output or exception flow. Product implementation and demonstrated understanding are tracked separately in PROJECT_CONTEXT.md.
+Immediate priority: Stage 4 is closed; Stage 5 implementation is ready for verification. The user explicitly requested development focus and deferred the walkthrough and questions. Atomic claims, partial-failure recovery, finite jobs, signals, and external scheduling remain learning topics, not demonstrated understanding. Product implementation and learning are tracked separately in PROJECT_CONTEXT.md.
 
 Existing HTTP exercises:
 
@@ -92,7 +92,7 @@ Exit criterion: one approved test post can be published deliberately, with crede
 
 ### Phase 4 — idempotent publishing workflow
 
-Status: complete as an implementation and manual end-to-end milestone on 2026-10-20. The user verified publication, persisted results, Notion updates, and successful synchronization-only recovery after a date-precision fix. Duplicate/concurrent-run rejection and interrupted outcomes have not been exercised; automated checks and Node 24 parity remain deferred, not passing. Interrupted/ambiguous claims require manual reconciliation and cannot automatically republish. Learning review remains separate; Phase 5 has not started.
+Status: complete as an implementation and manual end-to-end milestone on 2026-10-20. The user verified publication, persisted results, Notion updates, and successful synchronization-only recovery after a date-precision fix. Duplicate/concurrent-run rejection and interrupted outcomes have not been exercised; automated checks and Node 24 parity remain deferred, not passing. Interrupted/ambiguous claims require manual reconciliation and cannot automatically republish. Learning review remains separate.
 
 - confirm the local MongoDB approach before adding the dependency
 - connect using the official MongoDB driver
@@ -107,12 +107,16 @@ Exit criterion: the manual CLI workflow can publish safely without intentionally
 
 ### Phase 5 — recurring execution
 
-Status: postponed until the MVP workflow is stable.
+Status: implemented on 2026-10-20; verification and schedule activation pending. The user explicitly approved automatic publication of human-approved ready pages, gated by `AUTO_PUBLISH_ENABLED=true` and `DRY_RUN=false` (ADR 006). No live job or schedule has been run.
 
 - finite publishing command
 - external scheduler rather than an in-process interval
 - overlap protection and graceful termination
 - safe retry policy
+
+The finite job handles up to ten candidates, prioritizes saved published results for synchronization, keeps ambiguous claims blocked, and uses a local overlap lock plus existing per-page MongoDB claims. A macOS launchd template is included but inactive. See [recurring execution](recurring-execution.md).
+
+Exit criterion: verify the dry-run and approved live job, overlap protection, shutdown, and synchronization-only recovery before activating recurring publication. Implementation alone does not close the phase.
 
 ### Phase 6 — analytics synchronization
 

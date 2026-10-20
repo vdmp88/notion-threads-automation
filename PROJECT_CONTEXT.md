@@ -106,7 +106,7 @@ Outside the MVP: AI generation, automatic AI publication, Notion webhooks, sched
 ## Safety and reliability
 
 - `DRY_RUN=true` is the default. Dry-run must not publish to Threads, update Notion, or write a publication record.
-- A real publication requires explicit confirmation immediately before the external action.
+- Manual publication requires explicit confirmation immediately before the external action. On 2026-10-20 the user approved the Stage 5 exception: human-set ready authorizes automatic publication/result synchronization only with `AUTO_PUBLISH_ENABLED=true` and `DRY_RUN=false`. Implementing this does not activate a schedule or authorize an assistant-run live job.
 - Secrets must stay in ignored environment variables and must not appear in source code, client code, logs, or examples.
 - Use a unique `notionPageId` and an atomic MongoDB claim to prevent concurrent duplicate publication.
 - Persist external identifiers and progress so crashes can be reconciled.
@@ -175,6 +175,20 @@ Environment placeholders for future integrations already exist in `.env.example`
 Do not assume every concept is fully mastered. Briefly reconnect new code to these ideas when relevant.
 
 ## Current checkpoint
+
+Stage 5 implementation added on 2026-10-20; verification and activation pending:
+
+- User explicitly requested the next stage and chose automatic publication of ready posts. ADR 006 and AGENTS.md record the narrow exception to immediate interactive confirmation. Manual CLIs retain their prompts; private `.env` is unchanged.
+- Added `publication:run`, a finite noninteractive CLI requiring both `AUTO_PUBLISH_ENABLED=true` and `DRY_RUN=false` for writes. Defaults remain safe. Dry-run reads Notion/MongoDB and uses a local filesystem lock, but performs no external writes or index initialization.
+- Added a bounded batch service, metadata-aware ready-ID discovery, and read-only discovery of saved published results. Up to ten candidates per run; pending synchronization first, then oldest ready pages. Existing ambiguous/interrupted claims are reported for manual review, never republished. Failures stop the run without immediate retries.
+- Added a local `.data/publication-job.lock` directory to prevent overlapping job runs in one checkout. MongoDB page claims remain the cross-host publication guard. Hard crashes can leave the lock; never reclaim by age. Blocked/invalid old pages can delay later candidates. Multiple active schedulers are not supported as an operational setup.
+- Added cooperative SIGINT/SIGTERM handling and service checkpoints: preserve results of already sent writes, then stop before another side effect. Closing MongoDB and releasing the local lock happen in finally. Structured job events omit draft text and credentials.
+- Added seven focused tests for the opt-in gate, dry-run, persisted-result synchronization, ambiguous intent, failure without retry, cooperative stop, and local overlap locking. Tests, typecheck, build, lint, formatter, live API/database commands, and scheduler activation were NOT run. Source readback only; no verification pass claimed.
+- Added inactive macOS launchd template at `ops/local.notion-threads.publication.plist.example` (15-minute example, dry-run overrides), plus `docs/recurring-execution.md`. No dependencies installed, Git commands used, external schema changes made, or actual publications sent.
+- Next checkpoint: requested automated checks and one manual dry-run, followed by controlled overlap/shutdown/live verification. Activate a schedule only with explicit approval. Stage 5 is not closed.
+- Learning: briefly explained finite processes, external scheduling, stop signals, and retained claims. Detailed Stage 3–5 walkthrough remains deferred; no mastery inferred.
+
+### Stage 4 closure (historical)
 
 Stage 4 implementation and manual end-to-end milestone closed on 2026-10-20:
 

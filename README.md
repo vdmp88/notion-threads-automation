@@ -2,7 +2,7 @@
 
 A learning-focused, production-minded Node.js application that will publish explicitly approved Notion content to a single Threads account.
 
-> **Current status:** Phases 2–4 are implemented. The user manually verified integrated publication and synchronization-only recovery on 2026-10-20. Stage 4 automated checks, concurrent/duplicate-run scenarios, Node 24 parity, and live token refresh remain unverified. Learning review is pending; scheduled execution has not started.
+> **Current status:** Phases 2–4 are implemented; the Stage 4 manual workflow is verified. Stage 5 now has an opt-in finite automatic job and an inactive macOS schedule template. Stage 5 verification and activation remain pending. Automated checks, concurrent/duplicate-run scenarios, Node 24 parity, and live token refresh remain unverified.
 
 ## Naming and scope
 
@@ -77,6 +77,18 @@ Notion tokens and the Threads credentials required by the selected authenticatio
 `THREADS_ACCESS_TOKEN` is required for profile reads and live test publication, but not for an offline publication dry-run. It is a user access token, not the app secret. The local `.env` is user-managed; never paste tokens into chat.
 
 ## Development commands
+
+### Stage 5 recurring job (implemented, not yet verified or activated)
+
+```bash
+DRY_RUN=true npm run publication:run
+```
+
+Reads Notion and MongoDB, considers up to ten pages, and reports proposed actions without external writes. A local lock under `.data/` prevents overlapping runs from this checkout. Unlike the single-page preview, this dry-run requires MongoDB so it can inspect publication history.
+
+The user approved treating human-set `ready` as automatic publication approval. Live operation additionally requires `DRY_RUN=false` and `AUTO_PUBLISH_ENABLED=true`; it has no interactive prompts. The manual publication CLI retains its confirmations. The job never republishes saved claims and retries only synchronization for confirmed published results.
+
+See [recurring execution](docs/recurring-execution.md) for shutdown, recovery, exit codes, and the inactive macOS scheduler template. No schedule or private environment settings have been changed.
 
 ### Stage 4 setup (in progress)
 
@@ -239,7 +251,7 @@ npm run format:check
 - Phase 2: read-only Notion schema inspection and mapping — complete
 - Phase 3: Threads authentication and an explicitly approved test post — complete
 - Phase 4: idempotent publishing workflow backed by MongoDB — implemented; manual publication/sync recovery verified
-- Phase 5: safe recurring execution
+- Phase 5: safe recurring execution — implemented; verification and schedule activation pending
 - Phase 6: analytics synchronization
 - Phase 7: production reliability
 - Phase 8: deployment
@@ -251,7 +263,7 @@ npm run format:check
 - External inputs and API responses are validated.
 - HTTP requests use timeouts.
 - Access tokens are redacted from logs and error details.
-- A real Threads post always requires `DRY_RUN=false` and explicit human confirmation.
+- A real Threads post requires `DRY_RUN=false`. Manual CLIs require immediate confirmation; the opt-in automatic job accepts human-set `ready` as approval and also requires `AUTO_PUBLISH_ENABLED=true`.
 - An ambiguous publish result is never retried automatically.
 
 ## Current limitations

@@ -9,6 +9,29 @@ import { NotionSchemaError, validateNotionPostSchema } from './notion-schema.js'
 
 export class NotionPublicationDataError extends Error {}
 
+// Bounded discovery only. Every selected page is subsequently read through the
+// authoritative metadata-aware reader. A scheduler run is not a full export.
+export async function listReadyPublicationPageIds(
+  client: Client, dataSourceId: string,
+): Promise<string[]> {
+  const response = await client.dataSources.query({
+    data_source_id: dataSourceId,
+    filter: { property: 'Status', status: { equals: 'ready' } },
+    sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
+    page_size: 10,
+  });
+  if (response.request_status?.type === 'incomplete') {
+    throw new NotionPublicationDataError('Notion returned an incomplete publication query.');
+  }
+  return response.results.map((page) => {
+    const id = notionPageIdSchema.safeParse(page.id);
+    if (!isFullPage(page) || !id.success) {
+      throw new NotionPublicationDataError('Notion returned an incomplete publication page.');
+    }
+    return id.data;
+  });
+}
+
 export async function validateNotionPublicationSchema(client: Client, dataSourceId: string): Promise<void> {
   const schema = await readNotionSchema(client, dataSourceId);
   validateNotionPostSchema(schema);
@@ -102,7 +125,7 @@ export function assertNotionSyncCompatible(post: ContentPost, result: PublishedP
 
 export async function writeNotionPublication(
   client: Client, dataSourceId: string, result: PublishedPublication,
-  options: { dryRun: boolean },
+  options: { dryRun: boolean; signal?: AbortSignal },
 ): Promise<void> {
   if (options.dryRun !== false || !result.threadsUrl) {
     throw new NotionPublicationDataError('Notion writes require live mode and a saved post URL.');
@@ -110,6 +133,7 @@ export async function writeNotionPublication(
   await validateNotionPublicationSchema(client, dataSourceId);
   const current = await readNotionPublicationPost(client, dataSourceId, result.notionPageId);
   assertNotionSyncCompatible(current, result);
+  options.signal?.throwIfAborted();
   // Only result fields change; never write title, text, or topic. No SDK retries.
   await client.pages.update({
     page_id: result.notionPageId,
